@@ -1,0 +1,22 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+)
+
+func main() {
+	fmt.Printf("Starting server at port {{port}}\n")
+	fs := http.FileServer(http.Dir("{{directory}}"))
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			r.URL.Path += ".html"
+		}
+		fs.ServeHTTP(w, r)
+	})
+
+	if err := http.ListenAndServe("{{port}}", nil); err != nil {
+		log.Fatal(err)
+	}
+}
