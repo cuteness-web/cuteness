@@ -1,0 +1,3 @@
+init_behaviour = "fmt.Printf(\"Starting webserver\")"
+fail_behaviour = "log.Fatal(err)"
+recursive = true
