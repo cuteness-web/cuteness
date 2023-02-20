@@ -1,0 +1,9 @@
+# Ignore all binaries (or other files without extension) ========
+
+*
+!*.*
+!*/
+
+# ===============================================================
+
+/target
