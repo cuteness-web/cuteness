@@ -1,3 +1,3 @@
-init_behaviour = "fmt.Printf(\"Starting webserver\")"
+init_behaviour = "fmt.Printf(\"Starting webserver at port 8080\")"
 fail_behaviour = "log.Fatal(err)"
-recursive = true
+imports = ["fmt", "log"]

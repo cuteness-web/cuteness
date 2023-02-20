@@ -22,6 +22,7 @@ struct Args {
 struct Config {
 	init_behaviour: String,
 	fail_behaviour: String,
+	imports: Vec<String>
 }
 
 mod templating;
@@ -45,7 +46,11 @@ fn main() {
 		content = include_str !("../wawaconfig.default.toml").to_string();
 	}
 
-	let config = toml::from_str::<Config>(&content).expect("Couldn't parse configuration");
+	let mut config = toml::from_str::<Config>(&content).expect("Couldn't parse configuration");
+
+	for i in 0..config.imports.len() {
+		config.imports[i] = format!("\"{}\"", config.imports[i]);
+	}
 
     // Create www directory ======================
 
@@ -61,7 +66,7 @@ fn main() {
     f.write_all(
         reg.render(
             "routing_template",
-            &json!({"port": args.port, "directory": args.dir, "init_behaviour": config.init_behaviour, "fail_behaviour": config.fail_behaviour}),
+            &json!({"port": args.port, "directory": args.dir, "init_behaviour": config.init_behaviour, "fail_behaviour": config.fail_behaviour, "imports": config.imports.join("\n\t")}),
         )
         .expect("Couldn't render `routing.go`")
         .as_bytes(),
