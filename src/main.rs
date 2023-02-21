@@ -7,8 +7,11 @@ use serde::Deserialize;
 use serde_json::json;
 
 use std::fs::{self, File};
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
 use std::path::Path;
+
+#[cfg(feature = "sass")]
+use std::process::Command;
 
 #[derive(Parse)]
 struct Args {
@@ -20,6 +23,9 @@ struct Args {
     /// Output directory for HTML files
     #[arg(long, default_value = "./static")]
     outdir: String,
+    #[cfg(feature = "sass")]
+    #[arg(long, default_value = "sass")]
+    sassbin: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -29,14 +35,13 @@ struct Config {
     imports: Vec<String>,
 }
 
-mod templating;
-
 fn main() {
     // * Register all templates ====================
 
     let mut reg = handlebars::Handlebars::new();
     reg.register_escape_fn(no_escape);
-    templating::routing_template(&mut reg).expect("Couldn't register `routing.go`");
+    reg.register_template_file("routing_template", "./serverside/routing.hbs")
+        .expect("Couldn't register `routing.go`");
 
     // ===========================================
 
@@ -83,13 +88,13 @@ fn main() {
     // * Convert Markdown files to HTML ============
 
     if !Path::new(&format!("www/{}", &args.outdir)).exists() {
-        dbg!("waw");
         fs::create_dir(format!("www/{}", &args.outdir))
             .unwrap_or_else(|_| panic!("Couldn't create directory `{}`", args.outdir));
     }
 
     let paths = fs::read_dir(&args.indir)
         .unwrap_or_else(|_| panic!("Couldn't read directory `{}`", args.indir));
+
     for path in paths {
         let path = path.expect("Couldn't process path in input directory");
 
@@ -120,9 +125,65 @@ fn main() {
             )
         });
 
-        f.write_all(html_output.as_bytes())
+        f.write_if_different(html_output.as_bytes(), format!(
+            "www/{}/{}.html",
+            args.outdir,
+            &filename_str[..filename_str.len() - 3]
+        ))
             .expect("Couldn't write to file");
     }
 
     // ===========================================
+
+    // * Compile styles ==========================
+
+    if Path::new(&format!("{}/styles", &args.indir)).exists() {
+        compile_styles(
+            &format!("{}/styles", &args.indir),
+            &format!("www/{}/styles", &args.outdir),
+            &args.sassbin,
+        );
+    }
+
+    // ===========================================
+}
+
+#[cfg(feature = "sass")]
+#[cold]
+#[inline(never)]
+fn compile_styles(indir: &str, outdir: &str, sass_bin: &str) {
+    Command::new(sass_bin)
+        .arg(format!("{}:{}", &indir, &outdir))
+        .status()
+        .expect("Error while processing path with sass");
+}
+
+#[cfg(not(feature = "sass"))]
+#[cold]
+fn compile_styles(indir: &str, outdir: &str, sass_bin: &str) {}
+
+/// Write to file ONLY if the contents are different
+trait WriteIfDifferent {
+    /// Writes
+	fn write_if_different<P: AsRef<Path>>(&mut self, buf: &[u8], path: P) -> io::Result<()>;
+}
+
+impl<W> WriteIfDifferent for W
+where
+    W: Write,
+{
+    fn write_if_different<P: AsRef<Path>>(&mut self, buf: &[u8], path: P) -> io::Result<()> {
+        // Check hashes
+		
+		if blake3::hash(buf)
+            != blake3::hash(
+                fs::read_to_string(path)
+                    .expect("Couldn't read path")
+                    .as_bytes(),
+            )
+        {
+			self.write_all(buf).expect("Couldn't write to file");
+		}
+        Ok(())
+    }
 }
