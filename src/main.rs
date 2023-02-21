@@ -3,7 +3,7 @@
 use clap::Parser as Parse;
 use handlebars::no_escape;
 use pulldown_cmark::{html, Options, Parser};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use yaml_front_matter::YamlFrontMatter;
 
@@ -32,20 +32,20 @@ struct Args {
     sassbin: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 struct Config {
     init_behaviour: String,
     fail_behaviour: String,
     imports: Vec<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 struct PageConfig {
     title: String,
     subtitle: Option<String>,
     tags: Option<Vec<String>>,
     date: String,
-	additional_css: Option<Vec<String>>
+    additional_css: Option<Vec<String>>,
 }
 
 fn main() {
@@ -125,7 +125,7 @@ fn main() {
         let parsed_markdown = YamlFrontMatter::parse::<PageConfig>(&content)
             .expect("Couldn't parse frontmatter metadata");
 
-		let binding = preprocessing::replace_to_curly_quotes(&parsed_markdown.content);
+        let binding = preprocessing::replace_to_curly_quotes(&parsed_markdown.content);
         let parser = Parser::new_ext(&binding, Options::all());
 
         let mut html_output = String::new();
@@ -146,7 +146,15 @@ fn main() {
             )
         });
 
-        // * Render using page's configuration ================================
+        // =======================================
+
+        // * Render in-markdown templates (the user can use handlebars even from the files)
+
+		html_output = reg.render_template(&html_output, &json!({"inner-config": &parsed_markdown.metadata, "outer-config": &config})).expect("Couldn't render unregistered template");
+
+        // =======================================
+
+        // * Render using page's configuration ===
 
         f.write_if_different(
             reg.render(
@@ -157,7 +165,7 @@ fn main() {
                     "subtitle": parsed_markdown.metadata.subtitle,
                     "tags": parsed_markdown.metadata.tags,
                     "date": parsed_markdown.metadata.date,
-					"additional_css": parsed_markdown.metadata.additional_css
+                    "additional_css": parsed_markdown.metadata.additional_css
                 }),
             )
             .unwrap_or_else(|_| {
