@@ -5,6 +5,7 @@ use handlebars::no_escape;
 use pulldown_cmark::{html, Options, Parser};
 use serde::Deserialize;
 use serde_json::json;
+use yaml_front_matter::YamlFrontMatter;
 
 use std::fs::{self, File};
 use std::io::{Read, Write};
@@ -23,16 +24,26 @@ struct Args {
     /// Output directory for HTML files
     #[arg(long, default_value = "static")]
     outdir: String,
+    /// Command for the sass compiler. E.g. "sass"
     #[cfg(feature = "sass")]
     #[arg(long, default_value = "sass")]
     sassbin: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
 struct Config {
     init_behaviour: String,
     fail_behaviour: String,
     imports: Vec<String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct PageConfig {
+    title: String,
+    subtitle: Option<String>,
+    tags: Option<Vec<String>>,
+    date: String,
+	additional_css: Option<Vec<String>>
 }
 
 fn main() {
@@ -87,7 +98,7 @@ fn main() {
 
     // ===========================================
 
-    // * Convert Markdown files to HTML ============
+    // * Create `www` directory and loop each item
 
     if !Path::new(&format!("www/{}", &args.outdir)).exists() {
         fs::create_dir(format!("www/{}", &args.outdir))
@@ -98,6 +109,8 @@ fn main() {
         .unwrap_or_else(|_| panic!("Couldn't read directory `{}`", args.indir));
 
     for path in paths {
+        // * Convert Markdown file to HTML =========
+
         let path = path.expect("Couldn't process path in input directory");
 
         if !path.file_name().to_string_lossy().ends_with(".md") {
@@ -107,7 +120,10 @@ fn main() {
         let content =
             fs::read_to_string(path.path()).expect("Can't get path of file in the input directory");
 
-        let parser = Parser::new_ext(&content, Options::all());
+        let parsed_markdown = YamlFrontMatter::parse::<PageConfig>(&content)
+            .expect("Couldn't parse frontmatter metadata");
+
+        let parser = Parser::new_ext(&parsed_markdown.content, Options::all());
 
         let mut html_output = String::new();
         html::push_html(&mut html_output, parser);
@@ -127,10 +143,19 @@ fn main() {
             )
         });
 
+        // * Render using page's configuration ================================
+
         f.write_if_different(
             reg.render(
                 "page_template",
-                &json!({"content": html_output, "title": "wawa"}),
+                &json!({
+                    "content": html_output,
+                    "title": parsed_markdown.metadata.title,
+                    "subtitle": parsed_markdown.metadata.subtitle,
+                    "tags": parsed_markdown.metadata.tags,
+                    "date": parsed_markdown.metadata.date,
+					"additional_css": parsed_markdown.metadata.additional_css
+                }),
             )
             .unwrap_or_else(|_| {
                 panic!(
@@ -145,6 +170,7 @@ fn main() {
                 &filename_str[..filename_str.len() - 3]
             ),
         )
+        // =======================================
     }
 
     // ===========================================
@@ -206,15 +232,14 @@ fn compile_styles(indir: &str, outdir: &str) {
             )
         });
 
-		if path.file_name().to_string_lossy().ends_with(".css") {
-			f.write_if_different(
-				fs::read_to_string(path.path())
-					.expect("Couldn't read path")
-					.as_bytes(),
-				format!("www/{}", &path.path().to_string_lossy()),
-			)
-		}
-
+        if path.file_name().to_string_lossy().ends_with(".css") {
+            f.write_if_different(
+                fs::read_to_string(path.path())
+                    .expect("Couldn't read path")
+                    .as_bytes(),
+                format!("www/{}", &path.path().to_string_lossy()),
+            )
+        }
     }
 }
 
@@ -231,16 +256,14 @@ where
     fn write_if_different<P: AsRef<Path>>(&mut self, buf: &[u8], path: P) {
         // Check hashes
 
-        if path.as_ref().exists()
+        if !(path.as_ref().exists()
             && blake3::hash(buf)
-                != blake3::hash(
+                == blake3::hash(
                     fs::read_to_string(path)
                         .expect("Couldn't read path")
                         .as_bytes(),
-                )
+                ))
         {
-            self.write_all(buf).expect("Couldn't write to file");
-        } else {
             self.write_all(buf).expect("Couldn't write to file");
         }
     }
