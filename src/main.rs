@@ -14,6 +14,8 @@ use std::path::Path;
 #[cfg(feature = "sass")]
 use std::process::Command;
 
+mod preprocessing;
+
 #[derive(Parse)]
 struct Args {
     /// Input directory
@@ -123,7 +125,8 @@ fn main() {
         let parsed_markdown = YamlFrontMatter::parse::<PageConfig>(&content)
             .expect("Couldn't parse frontmatter metadata");
 
-        let parser = Parser::new_ext(&parsed_markdown.content, Options::all());
+		let binding = preprocessing::replace_to_curly_quotes(&parsed_markdown.content);
+        let parser = Parser::new_ext(&binding, Options::all());
 
         let mut html_output = String::new();
         html::push_html(&mut html_output, parser);
