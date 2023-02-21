@@ -2,6 +2,7 @@
 
 use clap::Parser as Parse;
 use handlebars::no_escape;
+use preprocessing::*;
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -125,7 +126,8 @@ fn main() {
         let parsed_markdown = YamlFrontMatter::parse::<PageConfig>(&content)
             .expect("Couldn't parse frontmatter metadata");
 
-        let binding = preprocessing::replace_to_curly_quotes(&parsed_markdown.content);
+		let mut binding = curly_quotes(&parsed_markdown.content).to_string();
+		binding = emojis(&binding);
         let parser = Parser::new_ext(&binding, Options::all());
 
         let mut html_output = String::new();
