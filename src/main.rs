@@ -7,7 +7,7 @@ use serde::Deserialize;
 use serde_json::json;
 
 use std::fs::{self, File};
-use std::io::{self, Read, Write};
+use std::io::{Read, Write};
 use std::path::Path;
 
 #[cfg(feature = "sass")]
@@ -21,7 +21,7 @@ struct Args {
     #[arg(long, default_value = "8080")]
     port: u16,
     /// Output directory for HTML files
-    #[arg(long, default_value = "./static")]
+    #[arg(long, default_value = "static")]
     outdir: String,
     #[cfg(feature = "sass")]
     #[arg(long, default_value = "sass")]
@@ -41,7 +41,9 @@ fn main() {
     let mut reg = handlebars::Handlebars::new();
     reg.register_escape_fn(no_escape);
     reg.register_template_file("routing_template", "./serverside/routing.hbs")
-        .expect("Couldn't register `routing.go`");
+        .expect("Couldn't register `routing.hbs`");
+    reg.register_template_file("page_template", "./serverside/page.hbs")
+        .expect("Couldn't register page.hbs");
 
     // ===========================================
 
@@ -125,12 +127,24 @@ fn main() {
             )
         });
 
-        f.write_if_different(html_output.as_bytes(), format!(
-            "www/{}/{}.html",
-            args.outdir,
-            &filename_str[..filename_str.len() - 3]
-        ))
-            .expect("Couldn't write to file");
+        f.write_if_different(
+            reg.render(
+                "page_template",
+                &json!({"content": html_output, "title": "wawa"}),
+            )
+            .unwrap_or_else(|_| {
+                panic!(
+                    "Couldn't render template for page `{}`",
+                    path.file_name().to_string_lossy()
+                )
+            })
+            .as_bytes(),
+            format!(
+                "www/{}/{}.html",
+                args.outdir,
+                &filename_str[..filename_str.len() - 3]
+            ),
+        )
     }
 
     // ===========================================
@@ -141,6 +155,7 @@ fn main() {
         compile_styles(
             &format!("{}/styles", &args.indir),
             &format!("www/{}/styles", &args.outdir),
+            #[cfg(feature = "sass")]
             &args.sassbin,
         );
     }
@@ -148,6 +163,7 @@ fn main() {
     // ===========================================
 }
 
+/// As the feature "sass" is enabled, we're going to let Sass take care of the job.
 #[cfg(feature = "sass")]
 #[cold]
 #[inline(never)]
@@ -155,35 +171,77 @@ fn compile_styles(indir: &str, outdir: &str, sass_bin: &str) {
     Command::new(sass_bin)
         .arg(format!("{}:{}", &indir, &outdir))
         .status()
-        .expect("Error while processing path with sass");
+        .expect("Error while processing path with Sass");
 }
 
+/// As the feature "sass" isn't activated, all `.sass` (actually, all not `.css`) files are ignored. `*.css` files are copied to the output directory `styles` subdirectory.
 #[cfg(not(feature = "sass"))]
 #[cold]
-fn compile_styles(indir: &str, outdir: &str, sass_bin: &str) {}
+#[inline(never)]
+fn compile_styles(indir: &str, outdir: &str) {
+    // Just move the files to the new directory
+    let paths =
+        fs::read_dir(indir).unwrap_or_else(|_| panic!("Couldn't open directory {}", &indir));
+
+    dbg!(&outdir, &indir);
+
+    for path in paths {
+        let path = path.expect("Couldn't process a path in directory");
+        dbg!(&path.path().to_string_lossy());
+        if !Path::new(&outdir).exists() {
+            fs::create_dir(&outdir)
+                .unwrap_or_else(|_| panic!("Couldn't create directory {}", &outdir));
+        }
+
+        let mut f = File::create(format!(
+            "{}/{}",
+            &outdir,
+            &path.file_name().to_string_lossy()
+        ))
+        .unwrap_or_else(|_| {
+            panic!(
+                "Couldn't open file `{}/{}`",
+                &outdir,
+                &path.file_name().to_string_lossy()
+            )
+        });
+
+		if path.file_name().to_string_lossy().ends_with(".css") {
+			f.write_if_different(
+				fs::read_to_string(path.path())
+					.expect("Couldn't read path")
+					.as_bytes(),
+				format!("www/{}", &path.path().to_string_lossy()),
+			)
+		}
+
+    }
+}
 
 /// Write to file ONLY if the contents are different
 trait WriteIfDifferent {
     /// Writes
-	fn write_if_different<P: AsRef<Path>>(&mut self, buf: &[u8], path: P) -> io::Result<()>;
+    fn write_if_different<P: AsRef<Path>>(&mut self, buf: &[u8], path: P);
 }
 
 impl<W> WriteIfDifferent for W
 where
     W: Write,
 {
-    fn write_if_different<P: AsRef<Path>>(&mut self, buf: &[u8], path: P) -> io::Result<()> {
+    fn write_if_different<P: AsRef<Path>>(&mut self, buf: &[u8], path: P) {
         // Check hashes
-		
-		if blake3::hash(buf)
-            != blake3::hash(
-                fs::read_to_string(path)
-                    .expect("Couldn't read path")
-                    .as_bytes(),
-            )
+
+        if path.as_ref().exists()
+            && blake3::hash(buf)
+                != blake3::hash(
+                    fs::read_to_string(path)
+                        .expect("Couldn't read path")
+                        .as_bytes(),
+                )
         {
-			self.write_all(buf).expect("Couldn't write to file");
-		}
-        Ok(())
+            self.write_all(buf).expect("Couldn't write to file");
+        } else {
+            self.write_all(buf).expect("Couldn't write to file");
+        }
     }
 }
