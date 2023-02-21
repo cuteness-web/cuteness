@@ -20,7 +20,7 @@ pub(crate)	fn curly_quotes(content: &str) -> Cow<'_, str> {
 /// Replaces all emojicodes (:cat:) to real emojis
 #[inline(always)]
 pub(crate) fn emojis(content: &str) -> String {
-	let mut result = String::new();
+	let mut result = content.clone().to_string();
 	for cap in REEMOJI.find_iter(content) {
 		if let Some(emoji) = get_by_shortcode(&content[cap.start() + 1..cap.end() - 1]) {
 			result = content.replace(cap.as_str(), emoji.as_str());
