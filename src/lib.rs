@@ -13,13 +13,13 @@ lazy_static! {
 
 /// Replace straight quotes (") with curly quotes, U+201C (“) and U+201D (”)
 #[inline(always)]
-pub(crate)	fn curly_quotes(content: &str) -> Cow<'_, str> {
+pub	fn curly_quotes(content: &str) -> Cow<'_, str> {
 		REQUOTE.replace_all(content, "“$1”")
 	}
 
 /// Replaces all emojicodes (:cat:) to real emojis
 #[inline(always)]
-pub(crate) fn emojis(content: &str) -> String {
+pub fn emojis(content: &str) -> String {
 	let mut result = content.clone().to_string();
 	for cap in REEMOJI.find_iter(content) {
 		if let Some(emoji) = get_by_shortcode(&content[cap.start() + 1..cap.end() - 1]) {

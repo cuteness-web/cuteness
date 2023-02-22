@@ -1,3 +1,8 @@
+[routing]
 init_behaviour = "fmt.Printf(\"Starting webserver at port 8080\")"
 fail_behaviour = "log.Fatal(err)"
 imports = ["fmt", "log"]
+
+[config]
+wawa = "hhhhhihihii"
+# Write here your custom templates!

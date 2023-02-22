@@ -1,21 +1,21 @@
 #![warn(clippy::all)]
 
 use clap::Parser as Parse;
-use handlebars::no_escape;
-use preprocessing::*;
+use handlebars::{no_escape, JsonValue};
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use toml::Value;
+use wawatemplating::*;
 use yaml_front_matter::YamlFrontMatter;
 
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::Path;
 
 #[cfg(feature = "sass")]
 use std::process::Command;
-
-mod preprocessing;
 
 #[derive(Parse)]
 struct Args {
@@ -33,13 +33,18 @@ struct Args {
     sassbin: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 struct Config {
+    routing: RoutingConfig,
+	config: HashMap<String, Value>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct RoutingConfig {
     init_behaviour: String,
     fail_behaviour: String,
     imports: Vec<String>,
 }
-
 #[derive(Serialize, Deserialize)]
 struct PageConfig {
     title: String,
@@ -74,8 +79,8 @@ fn main() {
 
     let mut config = toml::from_str::<Config>(&content).expect("Couldn't parse configuration");
 
-    for i in 0..config.imports.len() {
-        config.imports[i] = format!("\"{}\"", config.imports[i]);
+    for i in 0..config.routing.imports.len() {
+        config.routing.imports[i] = format!("\"{}\"", config.routing.imports[i]);
     }
 
     // * Create www directory ======================
@@ -92,7 +97,7 @@ fn main() {
     f.write_all(
         reg.render(
             "routing_template",
-            &json!({"port": args.port, "directory": args.outdir, "init_behaviour": config.init_behaviour, "fail_behaviour": config.fail_behaviour, "imports": config.imports.join("\n\t")}),
+            &json!({"port": args.port, "directory": args.outdir, "init_behaviour": config.routing.init_behaviour, "fail_behaviour": config.routing.fail_behaviour, "imports": config.routing.imports.join("\n\t")}),
         )
         .expect("Couldn't render `routing.go`")
         .as_bytes(),
@@ -126,8 +131,8 @@ fn main() {
         let parsed_markdown = YamlFrontMatter::parse::<PageConfig>(&content)
             .expect("Couldn't parse frontmatter metadata");
 
-		let mut binding = curly_quotes(&parsed_markdown.content).to_string();
-		binding = emojis(&binding);
+        let mut binding = curly_quotes(&parsed_markdown.content).to_string();
+        binding = emojis(&binding);
         let parser = Parser::new_ext(&binding, Options::all());
 
         let mut html_output = String::new();
@@ -152,7 +157,12 @@ fn main() {
 
         // * Render in-markdown templates (the user can use handlebars even from the files)
 
-		html_output = reg.render_template(&html_output, &json!({"inner-config": &parsed_markdown.metadata, "outer-config": &config})).expect("Couldn't render unregistered template");
+        html_output = reg
+            .render_template(
+                &html_output,
+                &json!({"page": &parsed_markdown.metadata, "outer": &config}),
+            )
+            .expect("Couldn't render unregistered template");
 
         // =======================================
 
@@ -222,11 +232,9 @@ fn compile_styles(indir: &str, outdir: &str) {
     let paths =
         fs::read_dir(indir).unwrap_or_else(|_| panic!("Couldn't open directory {}", &indir));
 
-    dbg!(&outdir, &indir);
 
     for path in paths {
         let path = path.expect("Couldn't process a path in directory");
-        dbg!(&path.path().to_string_lossy());
         if !Path::new(&outdir).exists() {
             fs::create_dir(&outdir)
                 .unwrap_or_else(|_| panic!("Couldn't create directory {}", &outdir));
