@@ -49,8 +49,9 @@ struct RoutingConfig {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MiscConfig {
-	latex: bool,
-	html_lang: String
+	latex: Option<bool>,
+	html_lang: Option<String>,
+	additional_html_header: Option<String>
 }
 
 #[derive(Serialize, Deserialize)]

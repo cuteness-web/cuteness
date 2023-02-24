@@ -3,13 +3,16 @@ package main
 import (
 	{{imports}}
 	"net/http"
+	"strings"
 )
 
 func main() {
 	{{init_behaviour}}
 	fs := http.FileServer(http.Dir("{{directory}}"))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
+		if r.URL.Path != "/" && !strings.Contains(r.URL.Path, ".") { 
+			{{!-- Testing purposes ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ --}}
+			{{!-- TODO: Replace with r.URL.Path[len(r.URL.Path) - 5:] != ".html" --}}
 			r.URL.Path += ".html"
 		}
 		fs.ServeHTTP(w, r)
