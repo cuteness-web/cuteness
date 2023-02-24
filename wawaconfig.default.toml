@@ -3,6 +3,9 @@ init_behaviour = "fmt.Printf(\"Starting webserver at port 8080\")"
 fail_behaviour = "log.Fatal(err)"
 imports = ["fmt", "log"]
 
+[misc]
+latex = true # Add KaTeX support
+html_lang = "en" # HTML Language
+
 [config]
-wawa = "hhhhhihihii"
 # Write here your custom templates!

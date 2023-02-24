@@ -1,7 +1,7 @@
 #![warn(clippy::all)]
 
 use clap::Parser as Parse;
-use handlebars::{no_escape, JsonValue};
+use handlebars::no_escape;
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -36,7 +36,8 @@ struct Args {
 #[derive(Serialize, Deserialize, Debug)]
 struct Config {
     routing: RoutingConfig,
-	config: HashMap<String, Value>
+    config: HashMap<String, Value>,
+	misc: MiscConfig
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -45,9 +46,16 @@ struct RoutingConfig {
     fail_behaviour: String,
     imports: Vec<String>,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+struct MiscConfig {
+	latex: bool,
+	html_lang: String
+}
+
 #[derive(Serialize, Deserialize)]
 struct PageConfig {
-    title: String,
+	title: String,
     subtitle: Option<String>,
     tags: Option<Vec<String>>,
     date: String,
@@ -173,11 +181,8 @@ fn main() {
                 "page_template",
                 &json!({
                     "content": html_output,
-                    "title": parsed_markdown.metadata.title,
-                    "subtitle": parsed_markdown.metadata.subtitle,
-                    "tags": parsed_markdown.metadata.tags,
-                    "date": parsed_markdown.metadata.date,
-                    "additional_css": parsed_markdown.metadata.additional_css
+                    "page": &parsed_markdown.metadata,
+					"misc": &config.misc
                 }),
             )
             .unwrap_or_else(|_| {
@@ -231,7 +236,6 @@ fn compile_styles(indir: &str, outdir: &str) {
     // Just move the files to the new directory
     let paths =
         fs::read_dir(indir).unwrap_or_else(|_| panic!("Couldn't open directory {}", &indir));
-
 
     for path in paths {
         let path = path.expect("Couldn't process a path in directory");
