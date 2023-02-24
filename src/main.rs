@@ -10,7 +10,7 @@ use wawatemplating::*;
 use yaml_front_matter::YamlFrontMatter;
 
 use std::collections::HashMap;
-use std::fs::{self, File};
+use std::fs::{self, canonicalize, File};
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -37,7 +37,7 @@ struct Args {
 struct Config {
     routing: RoutingConfig,
     config: HashMap<String, Value>,
-	misc: MiscConfig
+    misc: MiscConfig,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -49,14 +49,14 @@ struct RoutingConfig {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct MiscConfig {
-	latex: Option<bool>,
-	html_lang: Option<String>,
-	additional_html_header: Option<String>
+    latex: Option<bool>,
+    html_lang: Option<String>,
+    additional_html_header: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
 struct PageConfig {
-	title: String,
+    title: String,
     subtitle: Option<String>,
     tags: Option<Vec<String>>,
     date: String,
@@ -68,10 +68,18 @@ fn main() {
 
     let mut reg = handlebars::Handlebars::new();
     reg.register_escape_fn(no_escape);
-    reg.register_template_file("routing_template", "./serverside/routing.hbs")
-        .expect("Couldn't register `routing.hbs`");
-    reg.register_template_file("page_template", "./serverside/page.hbs")
-        .expect("Couldn't register page.hbs");
+    reg.register_template_file(
+        "routing_template",
+        canonicalize("./templates/routing.hbs")
+            .expect("Couldn't canonicalize path ./templates/routing.hbs"),
+    )
+    .expect("Couldn't register `routing.hbs`");
+    reg.register_template_file(
+        "page_template",
+        canonicalize("./templates/page.hbs")
+            .expect("Couldn't canonicalize path ./templates/page.hbs"),
+    )
+    .expect("Couldn't register page.hbs");
 
     // ===========================================
 
@@ -119,11 +127,11 @@ fn main() {
 
     if !Path::new(&format!("www/{}", &args.outdir)).exists() {
         fs::create_dir(format!("www/{}", &args.outdir))
-            .unwrap_or_else(|_| panic!("Couldn't create directory `{}`", args.outdir));
+            .unwrap_or_else(|e| panic!("Couldn't create directory `{}`: {e}", args.outdir));
     }
 
     let paths = fs::read_dir(&args.indir)
-        .unwrap_or_else(|_| panic!("Couldn't read directory `{}`", args.indir));
+        .unwrap_or_else(|e| panic!("Couldn't read directory `{}`: {e}", args.indir));
 
     for path in paths {
         // * Convert Markdown file to HTML =========
@@ -155,9 +163,9 @@ fn main() {
             args.outdir,
             &filename_str[..filename_str.len() - 3]
         ))
-        .unwrap_or_else(|_| {
+        .unwrap_or_else(|e| {
             panic!(
-                "Couldn't create / open file `{}`",
+                "Couldn't create / open file `{}`: {e}",
                 path.file_name().to_string_lossy()
             )
         });
@@ -183,12 +191,12 @@ fn main() {
                 &json!({
                     "content": html_output,
                     "page": &parsed_markdown.metadata,
-					"misc": &config.misc
+                    "misc": &config.misc
                 }),
             )
-            .unwrap_or_else(|_| {
+            .unwrap_or_else(|e| {
                 panic!(
-                    "Couldn't render template for page `{}`",
+                    "Couldn't render template for page `{}`: {e}",
                     path.file_name().to_string_lossy()
                 )
             })
@@ -223,6 +231,7 @@ fn main() {
 #[cold]
 #[inline(never)]
 fn compile_styles(indir: &str, outdir: &str, sass_bin: &str) {
+    // Compile custom styles
     Command::new(sass_bin)
         .arg(format!("{}:{}", &indir, &outdir))
         .status()
@@ -236,13 +245,13 @@ fn compile_styles(indir: &str, outdir: &str, sass_bin: &str) {
 fn compile_styles(indir: &str, outdir: &str) {
     // Just move the files to the new directory
     let paths =
-        fs::read_dir(indir).unwrap_or_else(|_| panic!("Couldn't open directory {}", &indir));
+        fs::read_dir(indir).unwrap_or_else(|e| panic!("Couldn't open directory {}: {e}", &indir));
 
     for path in paths {
         let path = path.expect("Couldn't process a path in directory");
         if !Path::new(&outdir).exists() {
             fs::create_dir(&outdir)
-                .unwrap_or_else(|_| panic!("Couldn't create directory {}", &outdir));
+                .unwrap_or_else(|e| panic!("Couldn't create directory {}: {e}", &outdir));
         }
 
         let mut f = File::create(format!(
@@ -250,9 +259,9 @@ fn compile_styles(indir: &str, outdir: &str) {
             &outdir,
             &path.file_name().to_string_lossy()
         ))
-        .unwrap_or_else(|_| {
+        .unwrap_or_else(|e| {
             panic!(
-                "Couldn't open file `{}/{}`",
+                "Couldn't open file `{}/{}`: {e}",
                 &outdir,
                 &path.file_name().to_string_lossy()
             )
