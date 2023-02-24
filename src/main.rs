@@ -52,6 +52,7 @@ struct MiscConfig {
     latex: Option<bool>,
     html_lang: Option<String>,
     additional_html_header: Option<String>,
+	syntax_highlighting: Option<bool>
 }
 
 #[derive(Serialize, Deserialize)]

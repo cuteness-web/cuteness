@@ -6,6 +6,7 @@ imports = ["fmt", "log"]
 [misc]
 latex = true # Add KaTeX support
 html_lang = "en" # HTML Language
+syntax_highlighting = true
 
 [config]
 # Write here your custom templates!
