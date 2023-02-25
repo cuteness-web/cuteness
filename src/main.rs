@@ -10,7 +10,7 @@ use wawatemplating::*;
 use yaml_front_matter::YamlFrontMatter;
 
 use std::collections::HashMap;
-use std::fs::{self, canonicalize, File};
+use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -19,18 +19,29 @@ use std::process::Command;
 
 #[derive(Parse)]
 struct Args {
-    /// Input directory
-    indir: String,
-    /// Connection port
-    #[arg(long, default_value = "8080")]
-    port: u16,
-    /// Output directory for HTML files
-    #[arg(long, default_value = "static")]
-    outdir: String,
-    /// Command for the sass compiler. E.g. "sass"
-    #[cfg(feature = "sass")]
-    #[arg(long, default_value = "sass")]
-    sassbin: String,
+    /// Update the software
+    #[command(subcommand)]
+    command: Option<SCommand>,
+}
+
+#[derive(clap::Subcommand)]
+enum SCommand {
+    Init,
+	Update,
+    Setup,
+    Build {
+        /// Connection port
+        #[arg(long, default_value = "8080")]
+        port: u16,
+        /// Output directory for HTML files
+        #[arg(long, default_value = "static")]
+        outdir: String,
+        /// Command for the sass compiler. E.g. "sass"
+        #[cfg(feature = "sass")]
+        #[arg(long, default_value = "sass")]
+        sassbin: String,
+    },
+	Uninstall
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -52,7 +63,7 @@ struct MiscConfig {
     latex: Option<bool>,
     html_lang: Option<String>,
     additional_html_header: Option<String>,
-	syntax_highlighting: Option<bool>
+    syntax_highlighting: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -65,35 +76,47 @@ struct PageConfig {
 }
 
 fn main() {
-    // * Register all templates ====================
+    let args = Args::parse();
+    // * Check for updates =======================
+
+    if !Path::new(&CARGO_HOME.join("wawatemplating-config")).exists() {
+        setup();
+    } else {
+        if let Some(subcommand) = args.command {
+            match subcommand {
+				SCommand::Build {port, outdir, sassbin} => build(port, outdir, sassbin),
+				SCommand::Init => init(),
+                SCommand::Update => check_for_updates(),
+				SCommand::Uninstall => uninstall(),
+                SCommand::Setup => setup(),
+				
+			}
+        }
+    }
+}
+
+fn build(port: u16, outdir: String, sassbin: String) {
+	// * Register all templates ==================
 
     let mut reg = handlebars::Handlebars::new();
     reg.register_escape_fn(no_escape);
-    reg.register_template_file(
-        "routing_template",
-        canonicalize("./templates/routing.hbs")
-            .expect("Couldn't canonicalize path ./templates/routing.hbs"),
-    )
-    .expect("Couldn't register `routing.hbs`");
-    reg.register_template_file(
-        "page_template",
-        canonicalize("./templates/page.hbs")
-            .expect("Couldn't canonicalize path ./templates/page.hbs"),
-    )
-    .expect("Couldn't register page.hbs");
+    reg.register_template_string("routing_template", include_str!("../templates/routing.hbs"))
+        .expect("Couldn't register `routing.hbs`");
+    reg.register_template_string("page_template", include_str!("../templates/page.hbs"))
+        .expect("Couldn't register page.hbs");
 
     // ===========================================
 
     // * Read configuration ========================
 
     let mut content = String::new();
-    if Path::new("wawaconfig.toml").exists() {
-        let mut f = File::open("wawaconfig.toml").expect("Couldn't open `wawaconfig.toml`");
-        f.read_to_string(&mut content)
-            .expect("Couldn't read configuration `wawaconfig.toml`");
-    } else {
-        content = include_str!("../wawaconfig.default.toml").to_string();
-    }
+    if !Path::new("wawaconfig.toml").exists() {
+		panic!("Couldn't find wawaconfig.toml");
+	}
+
+	let mut f = File::open("wawaconfig.toml").expect("Couldn't open `wawaconfig.toml`");
+	f.read_to_string(&mut content)
+		.expect("Couldn't read configuration `wawaconfig.toml`");
 
     let mut config = toml::from_str::<Config>(&content).expect("Couldn't parse configuration");
 
@@ -102,8 +125,6 @@ fn main() {
     }
 
     // * Create www directory ======================
-
-    let args = Args::parse();
 
     if !Path::new("www").exists() {
         fs::create_dir("www").expect("Couldn't create directory www");
@@ -115,7 +136,7 @@ fn main() {
     f.write_all(
         reg.render(
             "routing_template",
-            &json!({"port": args.port, "directory": args.outdir, "init_behaviour": config.routing.init_behaviour, "fail_behaviour": config.routing.fail_behaviour, "imports": config.routing.imports.join("\n\t")}),
+            &json!({"port": port, "directory": outdir, "init_behaviour": config.routing.init_behaviour, "fail_behaviour": config.routing.fail_behaviour, "imports": config.routing.imports.join("\n\t")}),
         )
         .expect("Couldn't render `routing.go`")
         .as_bytes(),
@@ -126,13 +147,13 @@ fn main() {
 
     // * Create `www` directory and loop each item
 
-    if !Path::new(&format!("www/{}", &args.outdir)).exists() {
-        fs::create_dir(format!("www/{}", &args.outdir))
-            .unwrap_or_else(|e| panic!("Couldn't create directory `{}`: {e}", args.outdir));
+    if !Path::new(&format!("www/{}", &outdir)).exists() {
+        fs::create_dir(format!("www/{}", &outdir))
+            .unwrap_or_else(|e| panic!("Couldn't create directory `{}`: {e}", outdir));
     }
 
-    let paths = fs::read_dir(&args.indir)
-        .unwrap_or_else(|e| panic!("Couldn't read directory `{}`: {e}", args.indir));
+    let paths = fs::read_dir("src")
+        .unwrap_or_else(|e| panic!("Couldn't read directory `{}`: {e}", "src"));
 
     for path in paths {
         // * Convert Markdown file to HTML =========
@@ -161,7 +182,7 @@ fn main() {
 
         let mut f = File::create(format!(
             "www/{}/{}.html",
-            args.outdir,
+            outdir,
             &filename_str[..filename_str.len() - 3]
         ))
         .unwrap_or_else(|e| {
@@ -204,7 +225,7 @@ fn main() {
             .as_bytes(),
             format!(
                 "www/{}/{}.html",
-                args.outdir,
+                outdir,
                 &filename_str[..filename_str.len() - 3]
             ),
         )
@@ -215,12 +236,11 @@ fn main() {
 
     // * Compile styles ==========================
 
-    if Path::new(&format!("{}/styles", &args.indir)).exists() {
+    if Path::new("src/styles").exists() {
         compile_styles(
-            &format!("{}/styles", &args.indir),
-            &format!("www/{}/styles", &args.outdir),
+            &format!("www/{}/styles", &outdir),
             #[cfg(feature = "sass")]
-            &args.sassbin,
+            &sassbin,
         );
     }
 
@@ -231,10 +251,10 @@ fn main() {
 #[cfg(feature = "sass")]
 #[cold]
 #[inline(never)]
-fn compile_styles(indir: &str, outdir: &str, sass_bin: &str) {
+fn compile_styles(outdir: &str, sass_bin: &str) {
     // Compile custom styles
     Command::new(sass_bin)
-        .arg(format!("{}:{}", &indir, &outdir))
+        .arg(format!("src/styles:{}", &outdir))
         .status()
         .expect("Error while processing path with Sass");
 }
@@ -246,7 +266,7 @@ fn compile_styles(indir: &str, outdir: &str, sass_bin: &str) {
 fn compile_styles(indir: &str, outdir: &str) {
     // Just move the files to the new directory
     let paths =
-        fs::read_dir(indir).unwrap_or_else(|e| panic!("Couldn't open directory {}: {e}", &indir));
+        fs::read_dir("src/styles").unwrap_or_else(|e| panic!("Couldn't open directory {}: {e}", "src"));
 
     for path in paths {
         let path = path.expect("Couldn't process a path in directory");
