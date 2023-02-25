@@ -18,7 +18,9 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
     {% for commit in commits %}
-        - {% if commit.breaking %}[**breaking**] {% endif %}{{ commit.message | upper_first }}\
+        - {% if commit.breaking %}[**breaking**] {% endif %} {% if commit.message is ending_with("(desc.)") %}{{ commit.message | upper_first | trim_end_matches(pat="(desc.)") }}[`{{ commit.id | truncate(length=7, end="") }}`](https://github.com/orhun/git-cliff/commit/{{ commit.id }})
+		{% else %}{{ commit.message }}
+		{% endif %} \
     {% endfor %}
 {% endfor %}\n
 """
@@ -38,20 +40,21 @@ filter_unconventional = true
 split_commits = false
 # regex for preprocessing the commit messages
 commit_preprocessors = [
-    # { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/orhun/git-cliff/issues/${2}))"}, # replace issue numbers
+	# { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "([#${2}](https://github.com/orhun/git-cliff/issues/${2}))"}, # replace issue numbers
+	{ pattern = "  +", replace = " " },
 ]
 # regex for parsing and grouping commits
 commit_parsers = [
-    { message = "^feat", group = "Features"},
-    { message = "^fix", group = "Bug Fixes"},
-    { message = "^doc", group = "Documentation"},
-    { message = "^perf", group = "Performance"},
-    { message = "^refactor", group = "Refactor"},
-    { message = "^style", group = "Styling"},
-    { message = "^test", group = "Testing"},
-    { message = "^chore\\(release\\): prepare for", skip = true},
-    { message = "^chore", group = "Miscellaneous Tasks"},
-    { body = ".*security", group = "Security"},
+	{ message = "^feat", group = "Features" },
+	{ message = "^fix", group = "Bug Fixes" },
+	{ message = "^doc", group = "Documentation" },
+	{ message = "^perf", group = "Performance" },
+	{ message = "^refactor", group = "Refactor" },
+	{ message = "^style", group = "Styling" },
+	{ message = "^test", group = "Testing" },
+	{ message = "^chore\\(release\\): prepare for", skip = true },
+	{ message = "^chore", group = "Miscellaneous Tasks" },
+	{ body = ".*security", group = "Security" },
 ]
 # protect breaking changes from being skipped due to matching a skipping commit_parser
 protect_breaking_commits = false
@@ -69,3 +72,7 @@ topo_order = false
 sort_commits = "oldest"
 # limit the number of commits included in the changelog.
 # limit_commits = 42
+
+link_parsers = [
+	{ pattern = "#(\\d+)", href = "https://github.com/blyxyas/wawatemplating/issues/$1" },
+]
