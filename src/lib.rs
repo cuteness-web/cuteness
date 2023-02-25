@@ -8,7 +8,7 @@ use regex::Regex;
 lazy_static! {
     static ref REQUOTE: Regex = Regex::new("\"(.*?)\"").unwrap();
     static ref REEMOJI: Regex = Regex::new(":(.*?):").unwrap();
-    pub static ref CARGO_HOME: PathBuf = home::cargo_home().expect("Couldn't get Cargo home");
+    pub static ref CONFIG_PATH: PathBuf = home::cargo_home().expect("Couldn't get Cargo home").join("wawatemplating-config");
 }
 
 const REPO_URL: &str = "https://github.com/blyxyas/wawatemplating.git";
@@ -33,7 +33,7 @@ pub fn emojis(content: &str) -> String {
 
 #[inline]
 pub fn setup() {
-    Repository::clone(REPO_URL, CARGO_HOME.join("wawatemplating-config"))
+    Repository::clone(REPO_URL, CONFIG_PATH.as_path())
         .unwrap_or_else(|e| panic!("Failed to clone repo: {e}"));
 
 	println!("WAWATemplating was successfully configured!");
@@ -41,7 +41,7 @@ pub fn setup() {
 
 #[inline]
 pub fn check_for_updates() {
-    let mut repo = match Repository::init(CARGO_HOME.join("wawatemplating-config")) {
+    let mut repo = match Repository::init(CONFIG_PATH.as_path()) {
         Ok(repo) => repo,
         Err(e) => panic!("failed to init: {}", e),
     };
@@ -54,7 +54,7 @@ pub fn check_for_updates() {
 
 #[inline]
 pub fn uninstall() {
-	let config_path = CARGO_HOME.join("wawatemplating-config");
+	let config_path = CONFIG_PATH.as_path();
 	if config_path.exists() {
 		remove_dir_all(&config_path).unwrap_or_else(|e| panic!("Couldn't remove directory {}: {e}", config_path.clone().display()));
 	}

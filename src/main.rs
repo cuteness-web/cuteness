@@ -79,7 +79,7 @@ fn main() {
     let args = Args::parse();
     // * Check for updates =======================
 
-    if !Path::new(&CARGO_HOME.join("wawatemplating-config")).exists() {
+    if !Path::new(CONFIG_PATH.as_path()).exists() {
         setup();
     } else {
         if let Some(subcommand) = args.command {
