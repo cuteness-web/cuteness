@@ -30,3 +30,14 @@ We use [`git-cliff`](https://github.com/orhun/git-cliff) to generate the [CHANGE
 ## Linting
 
 Your commit must pass `cargo clippy` with 0 warnings. You can set up a [Git hook](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks) on `.git/hooks/pre-commit` for this.
+
+## Versioning
+
+We use the [Semantic Versioning 2.0.0 Specification](https://semver.org/), that means:
+
+* (Enforced by `Cargo.toml`) We use MAJOR.MINOR.PATCH
+* We increment **MAJOR** each time a **breaking change** is implemented.
+* We increment **MINOR** for each feature that is implemented.
+* We increment **PATCH** when backwards-compatible bug fixes are implemented.
+
+We don't use additional labels for things like build version.
