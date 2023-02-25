@@ -1,4 +1,4 @@
-on: create
+on: [create, workflow_dispatch]
 jobs:
   changelog:
     name: Generate changelog
@@ -7,6 +7,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
+          persist-credentials: false 
           fetch-depth: 0
 
       - name: Generate a changelog
@@ -18,5 +19,15 @@ jobs:
         env:
           OUTPUT: CHANGELOG.md
 
-      - name: Print the changelog
-        run: cat "${{ steps.git-cliff.outputs.changelog }}"
+      - name: Commit files
+        run: |
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add CHANGELOG.md
+          git commit -a -m "chore: Update changelog"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.PAT }}
+          branch: ${{ github.ref }}
