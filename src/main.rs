@@ -81,18 +81,18 @@ fn main() {
 
     if !Path::new(CONFIG_PATH.as_path()).exists() {
         setup();
-    } else {
-        if let Some(subcommand) = args.command {
-            match subcommand {
-				SCommand::Build {port, outdir, sassbin} => build(port, outdir, sassbin),
-				SCommand::Init => init(),
-                SCommand::Update => check_for_updates(),
-				SCommand::Uninstall => uninstall(),
-                SCommand::Setup => setup(),
-				
-			}
-        }
     }
+
+	if let Some(subcommand) = args.command {
+		match subcommand {
+			SCommand::Build {port, outdir, sassbin} => build(port, outdir, sassbin),
+			SCommand::Init => init(),
+			SCommand::Update => check_for_updates(),
+			SCommand::Uninstall => uninstall(),
+			SCommand::Setup => setup(),
+			
+		}
+	}
 }
 
 fn build(port: u16, outdir: String, sassbin: String) {
@@ -100,9 +100,9 @@ fn build(port: u16, outdir: String, sassbin: String) {
 
     let mut reg = handlebars::Handlebars::new();
     reg.register_escape_fn(no_escape);
-    reg.register_template_string("routing_template", include_str!("../templates/routing.hbs"))
+    reg.register_template_file("routing_template", CONFIG_PATH.join("templates/routing.hbs"))
         .expect("Couldn't register `routing.hbs`");
-    reg.register_template_string("page_template", include_str!("../templates/page.hbs"))
+    reg.register_template_file("page_template", CONFIG_PATH.join("templates/page.hbs"))
         .expect("Couldn't register page.hbs");
 
     // ===========================================
@@ -153,7 +153,7 @@ fn build(port: u16, outdir: String, sassbin: String) {
     }
 
     let paths = fs::read_dir("src")
-        .unwrap_or_else(|e| panic!("Couldn't read directory `{}`: {e}", "src"));
+        .unwrap_or_else(|e| panic!("Couldn't read directory `src`: {e}"));
 
     for path in paths {
         // * Convert Markdown file to HTML =========
