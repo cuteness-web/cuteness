@@ -23,7 +23,7 @@ We use [`git-cliff`](https://github.com/orhun/git-cliff) to generate the [CHANGE
 * `chore:`
 * `ci:`
 * `docs:`
-* `style:`cargo bump $(git describe --tags --abbrev=0 | cut -c 2-)
+* `style:`
 * `refactor:`
 * `test:`
 
