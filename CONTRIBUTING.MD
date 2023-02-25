@@ -27,6 +27,10 @@ We use [`git-cliff`](https://github.com/orhun/git-cliff) to generate the [CHANGE
 * `refactor:`
 * `test:`
 
+If your commit is more complex and deserves a lengthier explanation, end the commit title with "(desc.)" (e.g. "Add a lot more subcommands (desc.)") A line break, and start your explanation. This is parsed by `git-cliff` and it will include a link to your commit, like this.
+
+- Add a lot more subcommands (desc. at #\<YOUR COMMIT\>)
+
 ## Linting
 
 Your commit must pass `cargo clippy` with 0 warnings. You can set up a [Git hook](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks) on `.git/hooks/pre-commit` for this.
@@ -41,3 +45,19 @@ We use the [Semantic Versioning 2.0.0 Specification](https://semver.org/), that 
 * We increment **PATCH** when backwards-compatible bug fixes are implemented.
 
 We don't use additional labels for things like build version.
+
+## Tags
+
+A new tag is created for each new version of the software is made. This means that git tags and the crate version is always synchronized
+
+So, every time you add / fix / improve the crate, you must create a new git tag for it.
+
+You can use the crate [`cargo-bump`](https://crates.io/crates/cargo-bump) to synchronize the current crate version to the current git tag.
+
+If you're using bash or similar, you can use the following command to do it automatically:
+
+```
+cargo bump $(git describe --tags --abbrev=0 | cut -c 2-) 
+```
+
+You can set up a git hook to make sure they're always synchronized.
