@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### Miscellaneous Tasks
+
+-  Bump version
+ 
+
+## [0.4.0] - 2023-02-26
+
+### Features
+
+-  Replace whole-clone of the repository with *shallow clone* [(desc. at `3474275`)](https://github.com/orhun/git-cliff/commit/3474275dbb3d0862568dc4d48852079c33d621e1)
+ 
+
+### Miscellaneous Tasks
+
+-  Update changelog
+ 
+-  Rename `styles` to `src-styles` & Now a built styles directory is available in `templates/styles`
+ 
+
 ### Ci
 
 -  Fix `changelog.yaml`, now it works :)
