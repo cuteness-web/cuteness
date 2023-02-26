@@ -1,4 +1,4 @@
-on: [push, workflow_dispatch]
+on: [create, workflow_dispatch]
 jobs:
   changelog:
     name: Generate changelog
