@@ -10,7 +10,7 @@ use wawatemplating::*;
 use yaml_front_matter::YamlFrontMatter;
 
 use std::collections::HashMap;
-use std::fs::{self, read_dir, File};
+use std::fs::{self, canonicalize, read_dir, File};
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -147,12 +147,23 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
     f.write_all(
         reg.render(
             "routing_template",
-            &json!({"port": port, "directory": outdir, "init_behaviour": config.routing.init_behaviour, "fail_behaviour": config.routing.fail_behaviour, "imports": config.routing.imports.join("\n\t")}),
+            &json!({
+				"port": port,
+				"directory": canonicalize(outdir).expect("Couldn't canonicalize output directory").join("static"),
+				"init_behaviour": config.routing.init_behaviour,
+				"fail_behaviour": config.routing.fail_behaviour,
+				"imports": config.routing.imports.join("\n\t")
+			}),
         )
         .expect("Couldn't render `routing.go`")
         .as_bytes(),
     )
-    .unwrap_or_else(|e| panic!("Couldn't create | open file {}: {e}", outdir.with_file_name("routing.go").display()));
+    .unwrap_or_else(|e| {
+        panic!(
+            "Couldn't create | open file {}: {e}",
+            outdir.with_file_name("routing.go").display()
+        )
+    });
 
     // ===========================================
 
@@ -163,13 +174,14 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
             .unwrap_or_else(|e| panic!("Couldn't create directory `{}`: {e}", outdir.display()));
     }
 
-	if !Path::new(&outdir.join("static")).exists() {
-	fs::create_dir(&outdir.join("static")).unwrap_or_else(|e| {
-		panic!(
-			"Couldn't create directory `{}`: {e}",
-			outdir.join("static").display()
-		)
-	});}
+    if !Path::new(&outdir.join("static")).exists() {
+        fs::create_dir(&outdir.join("static")).unwrap_or_else(|e| {
+            panic!(
+                "Couldn't create directory `{}`: {e}",
+                outdir.join("static").display()
+            )
+        });
+    }
 
     let paths =
         fs::read_dir("src").unwrap_or_else(|e| panic!("Couldn't read directory `src`: {e}"));
