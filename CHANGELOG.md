@@ -4,9 +4,37 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### Ci
+
+-  Change `on` key in action `changelog.yaml`
+ 
+
+## [0.5.1] - 2023-02-26
+
+### Bug Fixes
+
+-  Replace libgit2 with console commands. Fix pulling.
+ 
+
+## [0.5.0] - 2023-02-26
+
+### Features
+
+-  Reaplce `outdir` argument from `static` to `www` [(desc. at `26b072c`)](https://github.com/orhun/git-cliff/commit/26b072cd38f4ac0533de9190cd4ab0f5c3712f9e)
+ 
+
+## [0.4.1] - 2023-02-26
+
+### Bug Fixes
+
+-  Now built-in styling files are copied into the output directory.
+ 
+
 ### Miscellaneous Tasks
 
 -  Bump version
+ 
+-  Update CHANGELOG.md
  
 
 ## [0.4.0] - 2023-02-26
