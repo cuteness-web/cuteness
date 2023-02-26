@@ -170,7 +170,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
     // * Create `www` directory and loop each item
 
     if !Path::new(&outdir).exists() {
-        fs::create_dir(&outdir)
+        fs::create_dir(outdir)
             .unwrap_or_else(|e| panic!("Couldn't create directory `{}`: {e}", outdir.display()));
     }
 
@@ -218,12 +218,9 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
         ))
         .unwrap_or_else(|e| {
             panic!(
-                "Couldn't create / open file `{}`: {e}",
-                format!(
-                    "{}/static/{}.html",
-                    outdir.display(),
-                    &filename_str[..filename_str.len() - 3]
-                )
+                "Couldn't create / open file `{}/static/{}.html`: {e}",
+                outdir.display(),
+                &filename_str[..filename_str.len() - 3]
             )
         });
 
@@ -309,13 +306,10 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
         )
         .unwrap_or_else(|e| {
             panic!(
-                "Couldn't copy file `{}` to `{}`: {e}",
+                "Couldn't copy file `{}` to `{}/static/styles/{}`: {e}",
                 file.path().display(),
-                format!(
-                    "{}/static/styles/{}",
-                    outdir.display(),
-                    file.file_name().to_string_lossy()
-                )
+                outdir.display(),
+                file.file_name().to_string_lossy()
             )
         });
     }
