@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### Bug Fixes
+
+-  Fix bug where routing gets the wrong files (therefore, doesn't find them)
+ 
+
+### Miscellaneous Tasks
+
+-  Update changelog
+ 
+-  Bump version
+ 
+
 ### Ci
 
 -  Change `on` key in action `changelog.yaml`
