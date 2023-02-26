@@ -1,7 +1,6 @@
 use std::{borrow::Cow, path::{PathBuf, Path}, fs::{remove_dir_all, create_dir}, process::Command};
 
 use emojis::get_by_shortcode;
-use git2::Repository;
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -66,13 +65,7 @@ pub fn setup() {
 
 #[inline]
 pub fn check_for_updates() {
-    let mut repo = match Repository::init(CONFIG_PATH.as_path()) {
-        Ok(repo) => repo,
-        Err(e) => panic!("failed to init: {}", e),
-    };
-
-    repo.fast_forward()
-        .unwrap_or_else(|e| panic!("Couldn't fast-forward: {e}"));
+    Command::new("git").current_dir(CONFIG_PATH.as_path()).args(["pull", "--depth=1", "origin", "main", "--rebase"]).status().expect("Couldn't pull");
 	
 	println!("Repository updated!");
 }
@@ -88,29 +81,4 @@ pub fn uninstall() {
 pub fn init() {
 	create_dir("src").unwrap_or_else(|e| panic!("Couldn't create directory 'src': {e}"));
 	std::fs::write("wawaconfig.toml", include_bytes!("../wawaconfig.default.toml")).unwrap_or_else(|e| panic!("Couldn't create wawaconfig.toml: {e}"))
-}
-
-trait FastForward {
-    fn fast_forward(&mut self) -> Result<(), git2::Error>;
-}
-
-impl FastForward for Repository {
-    fn fast_forward(&mut self) -> Result<(), git2::Error> {
-        self.find_remote("origin")?.fetch(&["main"], None, None)?;
-
-        let fetch_head = self.find_reference("FETCH_HEAD")?;
-        let fetch_commit = self.reference_to_annotated_commit(&fetch_head)?;
-        let analysis = self.merge_analysis(&[&fetch_commit])?;
-        if analysis.0.is_up_to_date() {
-            Ok(())
-        } else if analysis.0.is_fast_forward() {
-            let refname = format!("refs/heads/{}", "main");
-            let mut reference = self.find_reference(&refname)?;
-            reference.set_target(fetch_commit.id(), "Fast-Forward")?;
-            self.set_head(&refname)?;
-            self.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))
-        } else {
-            Err(git2::Error::from_str("Fast-forward only!"))
-        }
-    }
 }
