@@ -33,8 +33,8 @@ enum SCommand {
         /// Connection port
         #[arg(long, default_value = "8080")]
         port: u16,
-        /// Output directory for HTML files
-        #[arg(long, default_value = "static")]
+        /// Output directory
+        #[arg(long, default_value = "www")]
         outdir: String,
         /// Command for the sass compiler. E.g. "sass"
         #[cfg(feature = "sass")]
@@ -130,14 +130,19 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
         config.routing.imports[i] = format!("\"{}\"", config.routing.imports[i]);
     }
 
-    // * Create www directory ======================
+    // * Create output directory ======================
 
-    if !Path::new("www").exists() {
-        fs::create_dir("www").expect("Couldn't create directory www");
+    if !Path::new(outdir).exists() {
+        fs::create_dir(outdir)
+            .unwrap_or_else(|e| panic!("Couldn't create directory {}: {e}", outdir.display()));
     };
 
-    let mut f =
-        File::create("www/routing.go").expect("Couldn't create | open file `www/routing.go`");
+    let mut f = File::create(outdir.join("routing.go")).unwrap_or_else(|e| {
+        panic!(
+            "Couldn't create | open file {}: {e}",
+            outdir.join("routing.go").display()
+        )
+    });
 
     f.write_all(
         reg.render(
@@ -147,16 +152,24 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
         .expect("Couldn't render `routing.go`")
         .as_bytes(),
     )
-    .expect("Couldn't write to file `www/routing.go`");
+    .unwrap_or_else(|e| panic!("Couldn't create | open file {}: {e}", outdir.with_file_name("routing.go").display()));
 
     // ===========================================
 
     // * Create `www` directory and loop each item
 
-    if !Path::new(&format!("www/{}", &outdir.display())).exists() {
-        fs::create_dir(format!("www/{}", &outdir.display()))
+    if !Path::new(&outdir).exists() {
+        fs::create_dir(&outdir)
             .unwrap_or_else(|e| panic!("Couldn't create directory `{}`: {e}", outdir.display()));
     }
+
+	if !Path::new(&outdir.join("static")).exists() {
+	fs::create_dir(&outdir.join("static")).unwrap_or_else(|e| {
+		panic!(
+			"Couldn't create directory `{}`: {e}",
+			outdir.join("static").display()
+		)
+	});}
 
     let paths =
         fs::read_dir("src").unwrap_or_else(|e| panic!("Couldn't read directory `src`: {e}"));
@@ -187,14 +200,18 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
         let filename_str = path_filename.to_string_lossy();
 
         let mut f = File::create(format!(
-            "www/{}/{}.html",
+            "{}/static/{}.html",
             outdir.display(),
             &filename_str[..filename_str.len() - 3]
         ))
         .unwrap_or_else(|e| {
             panic!(
                 "Couldn't create / open file `{}`: {e}",
-                path.file_name().to_string_lossy()
+                format!(
+                    "{}/static/{}.html",
+                    outdir.display(),
+                    &filename_str[..filename_str.len() - 3]
+                )
             )
         });
 
@@ -230,7 +247,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
             })
             .as_bytes(),
             format!(
-                "www/{}/{}.html",
+                "{}/static/{}.html",
                 outdir.display(),
                 &filename_str[..filename_str.len() - 3]
             ),
@@ -244,16 +261,16 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
 
     if Path::new("src/styles").exists() {
         compile_styles(
-            &format!("www/{}/styles", &outdir.display()),
+            &format!("{}/static/styles", &outdir.display()),
             #[cfg(feature = "sass")]
             &sassbin,
         );
     }
 
-    if !Path::new(&format!("www/{}/styles", outdir.display())).exists() {
-        fs::create_dir(&format!("www/{}/styles", outdir.display())).unwrap_or_else(|e| {
+    if !Path::new(&format!("{}/static/styles", outdir.display())).exists() {
+        fs::create_dir(&format!("{}/static/styles", outdir.display())).unwrap_or_else(|e| {
             panic!(
-                "Couldn't create directory `www/{}/styles`: {e}",
+                "Couldn't create directory `{}/static/styles`: {e}",
                 outdir.display()
             )
         });
@@ -273,7 +290,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
         std::fs::copy(
             file.path(),
             format!(
-                "www/{}/styles/{}",
+                "{}/static/styles/{}",
                 outdir.display(),
                 file.file_name().to_string_lossy()
             ),
@@ -283,7 +300,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
                 "Couldn't copy file `{}` to `{}`: {e}",
                 file.path().display(),
                 format!(
-                    "www/{}/styles/{}",
+                    "{}/static/styles/{}",
                     outdir.display(),
                     file.file_name().to_string_lossy()
                 )
@@ -340,7 +357,7 @@ fn compile_styles(indir: &str, outdir: &str) {
                 fs::read_to_string(path.path())
                     .expect("Couldn't read path")
                     .as_bytes(),
-                format!("www/{}", &path.path().to_string_lossy()),
+                format!("{}/static", &path.path().to_string_lossy()),
             )
         }
     }
