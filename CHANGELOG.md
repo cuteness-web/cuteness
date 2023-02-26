@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file.
  
 -  Bump version
  
+-  Update changelog
+ 
 
 ### Ci
 
