@@ -10,7 +10,7 @@ use wawatemplating::*;
 use yaml_front_matter::YamlFrontMatter;
 
 use std::collections::HashMap;
-use std::fs::{self, File};
+use std::fs::{self, read_dir, File};
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -27,7 +27,7 @@ struct Args {
 #[derive(clap::Subcommand)]
 enum SCommand {
     Init,
-	Update,
+    Update,
     Setup,
     Build {
         /// Connection port
@@ -41,7 +41,7 @@ enum SCommand {
         #[arg(long, default_value = "sass")]
         sassbin: String,
     },
-	Uninstall
+    Uninstall,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -83,25 +83,31 @@ fn main() {
         setup();
     }
 
-	if let Some(subcommand) = args.command {
-		match subcommand {
-			SCommand::Build {port, outdir, sassbin} => build(port, outdir, sassbin),
-			SCommand::Init => init(),
-			SCommand::Update => check_for_updates(),
-			SCommand::Uninstall => uninstall(),
-			SCommand::Setup => setup(),
-			
-		}
-	}
+    if let Some(subcommand) = args.command {
+        match subcommand {
+            SCommand::Build {
+                port,
+                outdir,
+                sassbin,
+            } => build(port, Path::new(&outdir), sassbin),
+            SCommand::Init => init(),
+            SCommand::Update => check_for_updates(),
+            SCommand::Uninstall => uninstall(),
+            SCommand::Setup => setup(),
+        }
+    }
 }
 
-fn build(port: u16, outdir: String, sassbin: String) {
-	// * Register all templates ==================
+fn build(port: u16, outdir: &Path, sassbin: String) {
+    // * Register all templates ==================
 
     let mut reg = handlebars::Handlebars::new();
     reg.register_escape_fn(no_escape);
-    reg.register_template_file("routing_template", CONFIG_PATH.join("templates/routing.hbs"))
-        .expect("Couldn't register `routing.hbs`");
+    reg.register_template_file(
+        "routing_template",
+        CONFIG_PATH.join("templates/routing.hbs"),
+    )
+    .expect("Couldn't register `routing.hbs`");
     reg.register_template_file("page_template", CONFIG_PATH.join("templates/page.hbs"))
         .expect("Couldn't register page.hbs");
 
@@ -111,12 +117,12 @@ fn build(port: u16, outdir: String, sassbin: String) {
 
     let mut content = String::new();
     if !Path::new("wawaconfig.toml").exists() {
-		panic!("Couldn't find wawaconfig.toml");
-	}
+        panic!("Couldn't find wawaconfig.toml");
+    }
 
-	let mut f = File::open("wawaconfig.toml").expect("Couldn't open `wawaconfig.toml`");
-	f.read_to_string(&mut content)
-		.expect("Couldn't read configuration `wawaconfig.toml`");
+    let mut f = File::open("wawaconfig.toml").expect("Couldn't open `wawaconfig.toml`");
+    f.read_to_string(&mut content)
+        .expect("Couldn't read configuration `wawaconfig.toml`");
 
     let mut config = toml::from_str::<Config>(&content).expect("Couldn't parse configuration");
 
@@ -147,13 +153,13 @@ fn build(port: u16, outdir: String, sassbin: String) {
 
     // * Create `www` directory and loop each item
 
-    if !Path::new(&format!("www/{}", &outdir)).exists() {
-        fs::create_dir(format!("www/{}", &outdir))
-            .unwrap_or_else(|e| panic!("Couldn't create directory `{}`: {e}", outdir));
+    if !Path::new(&format!("www/{}", &outdir.display())).exists() {
+        fs::create_dir(format!("www/{}", &outdir.display()))
+            .unwrap_or_else(|e| panic!("Couldn't create directory `{}`: {e}", outdir.display()));
     }
 
-    let paths = fs::read_dir("src")
-        .unwrap_or_else(|e| panic!("Couldn't read directory `src`: {e}"));
+    let paths =
+        fs::read_dir("src").unwrap_or_else(|e| panic!("Couldn't read directory `src`: {e}"));
 
     for path in paths {
         // * Convert Markdown file to HTML =========
@@ -182,7 +188,7 @@ fn build(port: u16, outdir: String, sassbin: String) {
 
         let mut f = File::create(format!(
             "www/{}/{}.html",
-            outdir,
+            outdir.display(),
             &filename_str[..filename_str.len() - 3]
         ))
         .unwrap_or_else(|e| {
@@ -225,7 +231,7 @@ fn build(port: u16, outdir: String, sassbin: String) {
             .as_bytes(),
             format!(
                 "www/{}/{}.html",
-                outdir,
+                outdir.display(),
                 &filename_str[..filename_str.len() - 3]
             ),
         )
@@ -238,10 +244,51 @@ fn build(port: u16, outdir: String, sassbin: String) {
 
     if Path::new("src/styles").exists() {
         compile_styles(
-            &format!("www/{}/styles", &outdir),
+            &format!("www/{}/styles", &outdir.display()),
             #[cfg(feature = "sass")]
             &sassbin,
         );
+    }
+
+    if !Path::new(&format!("www/{}/styles", outdir.display())).exists() {
+        fs::create_dir(&format!("www/{}/styles", outdir.display())).unwrap_or_else(|e| {
+            panic!(
+                "Couldn't create directory `www/{}/styles`: {e}",
+                outdir.display()
+            )
+        });
+    }
+
+    // * Copy built-in styles ====================
+
+    for file in read_dir(CONFIG_PATH.join("templates").join("styles"))
+        .unwrap_or_else(|e| {
+            panic!(
+                "Couldn't get directory {}, {e}",
+                CONFIG_PATH.join("templates").join("styles").display()
+            )
+        })
+        .filter_map(|e| e.ok())
+    {
+        std::fs::copy(
+            file.path(),
+            format!(
+                "www/{}/styles/{}",
+                outdir.display(),
+                file.file_name().to_string_lossy()
+            ),
+        )
+        .unwrap_or_else(|e| {
+            panic!(
+                "Couldn't copy file `{}` to `{}`: {e}",
+                file.path().display(),
+                format!(
+                    "www/{}/styles/{}",
+                    outdir.display(),
+                    file.file_name().to_string_lossy()
+                )
+            )
+        });
     }
 
     // ===========================================
@@ -265,8 +312,8 @@ fn compile_styles(outdir: &str, sass_bin: &str) {
 #[inline(never)]
 fn compile_styles(indir: &str, outdir: &str) {
     // Just move the files to the new directory
-    let paths =
-        fs::read_dir("src/styles").unwrap_or_else(|e| panic!("Couldn't open directory {}: {e}", "src"));
+    let paths = fs::read_dir("src/styles")
+        .unwrap_or_else(|e| panic!("Couldn't open directory {}: {e}", "src"));
 
     for path in paths {
         let path = path.expect("Couldn't process a path in directory");
