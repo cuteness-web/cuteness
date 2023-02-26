@@ -1,4 +1,4 @@
-use std::{borrow::Cow, path::PathBuf, fs::{remove_dir_all, create_dir}};
+use std::{borrow::Cow, path::{PathBuf, Path}, fs::{remove_dir_all, create_dir}, process::Command};
 
 use emojis::get_by_shortcode;
 use git2::Repository;
@@ -33,8 +33,33 @@ pub fn emojis(content: &str) -> String {
 
 #[inline]
 pub fn setup() {
-    Repository::clone(REPO_URL, CONFIG_PATH.as_path())
-        .unwrap_or_else(|e| panic!("Failed to clone repo: {e}"));
+	if CONFIG_PATH.exists() {
+		return;
+	}
+	
+	create_dir(CONFIG_PATH.as_path()).unwrap_or_else(|e| panic!("Couldn't create directory `{}`: {e}", CONFIG_PATH.display()));
+
+	// Initialize git repo
+
+	Command::new("git").current_dir(CONFIG_PATH.as_path()).args(["init"]).status().expect("Couldn't initialize repository");
+
+	// Add this repo as remote
+
+	Command::new("git").current_dir(CONFIG_PATH.as_path()).args(["remote", "add", "origin", REPO_URL]).status().expect("Couldn't add remote");
+
+	// Enable sparse checkout
+
+	Command::new("git").current_dir(CONFIG_PATH.as_path()).args(["config", "core.sparseCheckout", "true"]).status().expect("Couldn't enable `core.sparseCheckout`");
+
+	// Add templates to sparse-checkout
+
+	std::fs::write(CONFIG_PATH.join(".git").join("info").join("sparse-checkout"), "templates/*").unwrap_or_else(|e| panic!("Couldn't write to {}: {e}", CONFIG_PATH.join(".git").join("info").join("sparse-checkout").display()));
+
+	Command::new("echo").current_dir(CONFIG_PATH.as_path()).args(["templates/*", ">>", ".git/info/sparse-checkout"]).status().expect("Couldn't add templates to `.git/info/sparse-checkout`");
+
+	// Pull
+
+	Command::new("git").current_dir(CONFIG_PATH.as_path()).args(["pull", "--depth=1", "origin", "main"]).status().expect("Couldn't pull");
 
 	println!("WAWATemplating was successfully configured!");
 }
@@ -56,7 +81,7 @@ pub fn check_for_updates() {
 pub fn uninstall() {
 	let config_path = CONFIG_PATH.as_path();
 	if config_path.exists() {
-		remove_dir_all(&config_path).unwrap_or_else(|e| panic!("Couldn't remove directory {}: {e}", config_path.clone().display()));
+		remove_dir_all(config_path).unwrap_or_else(|e| panic!("Couldn't remove directory {}: {e}", <&Path>::clone(&config_path).display()));
 	}
 }
 
