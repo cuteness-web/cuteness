@@ -19,10 +19,14 @@ All notable changes to this project will be documented in this file.
  
 -  Update changelog
  
+-  Update changelog
+ 
 
 ### Ci
 
 -  Change `on` key in action `changelog.yaml`
+ 
+-  Minor fix
  
 
 ## [0.5.1] - 2023-02-26
