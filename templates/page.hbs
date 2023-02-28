@@ -13,8 +13,8 @@
 	{{#each page.additional_css}}
 	<link rel="stylesheet" href="{{this}}">
 	{{/each}}
-	
-	
+
+
 	{{#if misc.latex}}
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css"
 		integrity="sha384-9eLZqc9ds8eNjO3TmqPeYcDj8n+Qfa4nuSiGYa6DjLNcv9BtN69ZIulL9+8CqC9Y" crossorigin="anonymous">
@@ -39,20 +39,32 @@
 		});
 	</script>
 	{{/if}}
-	
-	
+
+
 	{{#if misc.syntax_highlighting}}
-	<link rel="stylesheet"
-      href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/styles/default.min.css">
+	<link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/styles/default.min.css">
 	<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/highlight.min.js"></script>
 	<script>hljs.highlightAll();</script>
 	{{/if}}
-	
+
 	{{misc.additional_html_header}}
 </head>
 
 <body>
-	{{content}}
+	{{!-- Sidebar --}}
+	<div class="wrapper">
+		<div class="wawasidebar">
+			<ul>
+
+			{{#each sidebar.map}}
+				<li><a href="{{this.url}}">{{this.title}}</a></li>
+			{{/each}}
+			</ul>
+		</div>
+		<div class="main-content">
+			{{content}}
+		</div>
+	</div>
 </body>
 
 </html>

@@ -8,9 +8,9 @@ use serde_json::json;
 use toml::Value;
 use wawatemplating::*;
 use yaml_front_matter::YamlFrontMatter;
+use hashbrown::HashMap;
 
-use std::collections::HashMap;
-use std::fs::{self, canonicalize, read_dir, File};
+use std::fs::{self, canonicalize, read_dir, File, read_to_string};
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -75,6 +75,17 @@ struct PageConfig {
     additional_css: Option<Vec<String>>,
 }
 
+#[derive(Serialize, Deserialize)]
+struct SummaryConfig {
+	map: Vec<Map>
+}
+
+#[derive(Serialize, Deserialize)]
+struct Map {
+	title: String,
+	url: String
+}
+
 fn main() {
     let args = Args::parse();
     // * Check for updates =======================
@@ -112,6 +123,8 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
         .expect("Couldn't register page.hbs");
 
     // ===========================================
+	
+	// ===========================================
 
     // * Read configuration ========================
 
@@ -166,6 +179,16 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
     });
 
     // ===========================================
+
+	// * Generate sidebar from SUMMARY.toml
+
+	if !Path::new("SUMMARY.toml").exists() {
+		panic!("Couldn't find SUMMARY.toml");
+	}
+
+	let summary: SummaryConfig = toml::from_str(&read_to_string("SUMMARY.toml").expect("Couldn't get file `SUMMARY.toml`")).expect("Couldn't parse summary in `SUMMARY.toml`");
+
+	// ===========================================
 
     // * Create `www` directory and loop each item
 
@@ -244,6 +267,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
                 "page_template",
                 &json!({
                     "content": html_output,
+                    "sidebar": summary,
                     "page": &parsed_markdown.metadata,
                     "misc": &config.misc
                 }),
