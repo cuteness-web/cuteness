@@ -4,9 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### Miscellaneous Tasks
+
+-  Bump version
+ 
+
+## [0.6.0] - 2023-02-28
+
 ### Bug Fixes
 
 -  Fix bug where routing gets the wrong files (therefore, doesn't find them)
+ 
+
+### Features
+
+-  Implement a sidebar (docs. pending)
  
 
 ### Miscellaneous Tasks
@@ -21,12 +33,21 @@ All notable changes to this project will be documented in this file.
  
 -  Update changelog
  
+-  Update changelog
+ 
+
+### Styling
+
+-  Follow Clippy's guidelines
+ 
 
 ### Ci
 
 -  Change `on` key in action `changelog.yaml`
  
 -  Minor fix
+ 
+-  Remove `create` from `on:` in `changelog.yaml`
  
 
 ## [0.5.1] - 2023-02-26
