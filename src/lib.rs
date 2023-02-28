@@ -80,5 +80,8 @@ pub fn uninstall() {
 
 pub fn init() {
 	create_dir("src").unwrap_or_else(|e| panic!("Couldn't create directory 'src': {e}"));
-	std::fs::write("wawaconfig.toml", include_bytes!("../wawaconfig.default.toml")).unwrap_or_else(|e| panic!("Couldn't create wawaconfig.toml: {e}"))
+	
+	std::fs::write("wawaconfig.toml", include_bytes!("../wawaconfig.default.toml")).unwrap_or_else(|e| panic!("Couldn't create `wawaconfig.toml`: {e}"));
+
+	std::fs::write("SUMMARY.md", include_bytes!("../SUMMARY.default.toml")).unwrap_or_else(|e| panic!("Couldn't create `SUMMARY.md`: {e}"));
 }
