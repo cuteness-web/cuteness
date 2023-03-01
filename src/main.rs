@@ -1,16 +1,17 @@
 #![warn(clippy::all)]
 
+use anyhow::{Context, Result};
 use clap::Parser as Parse;
 use handlebars::no_escape;
+use hashbrown::HashMap;
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use toml::Value;
 use wawatemplating::*;
 use yaml_front_matter::YamlFrontMatter;
-use hashbrown::HashMap;
 
-use std::fs::{self, canonicalize, read_dir, File, read_to_string};
+use std::fs::{self, canonicalize, read_dir, read_to_string, File};
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -77,16 +78,16 @@ struct PageConfig {
 
 #[derive(Serialize, Deserialize)]
 struct SummaryConfig {
-	map: Vec<Map>
+    map: Vec<Map>,
 }
 
 #[derive(Serialize, Deserialize)]
 struct Map {
-	title: String,
-	url: String
+    title: String,
+    url: String,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let args = Args::parse();
     // * Check for updates =======================
 
@@ -100,16 +101,17 @@ fn main() {
                 port,
                 outdir,
                 sassbin,
-            } => build(port, Path::new(&outdir), sassbin),
+            } => build(port, Path::new(&outdir), sassbin)?,
             SCommand::Init => init(),
             SCommand::Update => check_for_updates(),
             SCommand::Uninstall => uninstall(),
             SCommand::Setup => setup(),
         }
     }
+    Ok(())
 }
 
-fn build(port: u16, outdir: &Path, sassbin: String) {
+fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
     // * Register all templates ==================
 
     let mut reg = handlebars::Handlebars::new();
@@ -118,13 +120,13 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
         "routing_template",
         CONFIG_PATH.join("templates/routing.hbs"),
     )
-    .expect("Couldn't register `routing.hbs`");
+    .context("Couldn't register `routing.hbs`")?;
     reg.register_template_file("page_template", CONFIG_PATH.join("templates/page.hbs"))
-        .expect("Couldn't register page.hbs");
+        .context("Couldn't register page.hbs")?;
 
     // ===========================================
-	
-	// ===========================================
+
+    // ===========================================
 
     // * Read configuration ========================
 
@@ -133,11 +135,11 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
         panic!("Couldn't find wawaconfig.toml");
     }
 
-    let mut f = File::open("wawaconfig.toml").expect("Couldn't open `wawaconfig.toml`");
+    let mut f = File::open("wawaconfig.toml").context("Couldn't open `wawaconfig.toml`")?;
     f.read_to_string(&mut content)
-        .expect("Couldn't read configuration `wawaconfig.toml`");
+        .context("Couldn't read configuration `wawaconfig.toml`")?;
 
-    let mut config = toml::from_str::<Config>(&content).expect("Couldn't parse configuration");
+    let mut config = toml::from_str::<Config>(&content).context("Couldn't parse configuration")?;
 
     for i in 0..config.routing.imports.len() {
         config.routing.imports[i] = format!("\"{}\"", config.routing.imports[i]);
@@ -147,79 +149,81 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
 
     if !Path::new(outdir).exists() {
         fs::create_dir(outdir)
-            .unwrap_or_else(|e| panic!("Couldn't create directory {}: {e}", outdir.display()));
+            .with_context(|| format!("Couldn't create directory {}", outdir.display()))?;
     };
 
-    let mut f = File::create(outdir.join("routing.go")).unwrap_or_else(|e| {
-        panic!(
-            "Couldn't create | open file {}: {e}",
+    let mut f = File::create(outdir.join("routing.go")).with_context(|| {
+        format!(
+            "Couldn't create | open file {}",
             outdir.join("routing.go").display()
         )
-    });
+    })?;
 
     f.write_all(
         reg.render(
             "routing_template",
             &json!({
 				"port": port,
-				"directory": canonicalize(outdir).expect("Couldn't canonicalize output directory").join("static"),
+				"directory": canonicalize(outdir).context("Couldn't canonicalize output directory")?.join("static"),
 				"init_behaviour": config.routing.init_behaviour,
 				"fail_behaviour": config.routing.fail_behaviour,
 				"imports": config.routing.imports.join("\n\t")
 			}),
         )
-        .expect("Couldn't render `routing.go`")
+        .context("Couldn't render `routing.go`")?
         .as_bytes(),
     )
-    .unwrap_or_else(|e| {
-        panic!(
-            "Couldn't create | open file {}: {e}",
+    .with_context(|| {
+        format!(
+            "Couldn't create | open file {}",
             outdir.with_file_name("routing.go").display()
         )
-    });
+    })?;
 
     // ===========================================
 
-	// * Generate sidebar from SUMMARY.toml
+    // * Generate sidebar from SUMMARY.toml
 
-	if !Path::new("SUMMARY.toml").exists() {
-		panic!("Couldn't find SUMMARY.toml");
-	}
+    if !Path::new("SUMMARY.toml").exists() {
+        panic!("Couldn't find SUMMARY.toml");
+    }
 
-	let summary: SummaryConfig = toml::from_str(&read_to_string("SUMMARY.toml").expect("Couldn't get file `SUMMARY.toml`")).expect("Couldn't parse summary in `SUMMARY.toml`");
+    let summary: SummaryConfig = toml::from_str(
+        &read_to_string("SUMMARY.toml").context("Couldn't get file `SUMMARY.toml`")?,
+    )
+    .context("Couldn't parse summary in `SUMMARY.toml`")?;
 
-	// ===========================================
+    // ===========================================
 
     // * Create `www` directory and loop each item
 
     if !Path::new(&outdir).exists() {
         fs::create_dir(outdir)
-            .unwrap_or_else(|e| panic!("Couldn't create directory `{}`: {e}", outdir.display()));
+            .with_context(|| format!("Couldn't create directory `{}`", outdir.display()))?;
     }
 
     if !Path::new(&outdir.join("static")).exists() {
-        fs::create_dir(&outdir.join("static")).unwrap_or_else(|e| {
-            panic!(
-                "Couldn't create directory `{}`: {e}",
+        fs::create_dir(&outdir.join("static")).with_context(|| {
+            format!(
+                "Couldn't create directory `{}`",
                 outdir.join("static").display()
             )
-        });
+        })?;
     }
 
-    let paths =
-        fs::read_dir("src").unwrap_or_else(|e| panic!("Couldn't read directory `src`: {e}"));
+    let paths = fs::read_dir("src").with_context(|| format!("Couldn't read directory `src`"))?;
 
     for path in paths {
         // * Convert Markdown file to HTML =========
 
-        let path = path.expect("Couldn't process path in input directory");
+        let path = path.context("Couldn't process path in input directory")?;
 
         if !path.file_name().to_string_lossy().ends_with(".md") {
             continue;
         };
 
-        let content =
-            fs::read_to_string(path.path()).expect("Can't get path of file in the input directory");
+        let content = fs::read_to_string(path.path())
+            .context("Can't get path of file in the input directory")?;
 
         let parsed_markdown = YamlFrontMatter::parse::<PageConfig>(&content)
             .expect("Couldn't parse frontmatter metadata");
@@ -239,13 +243,13 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
             outdir.display(),
             &filename_str[..filename_str.len() - 3]
         ))
-        .unwrap_or_else(|e| {
-            panic!(
-                "Couldn't create / open file `{}/static/{}.html`: {e}",
+        .with_context(|| {
+            format!(
+                "Couldn't create / open file `{}/static/{}.html`",
                 outdir.display(),
                 &filename_str[..filename_str.len() - 3]
             )
-        });
+        })?;
 
         // =======================================
 
@@ -256,7 +260,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
                 &html_output,
                 &json!({"page": &parsed_markdown.metadata, "outer": &config}),
             )
-            .expect("Couldn't render unregistered template");
+            .context("Couldn't render unregistered template")?;
 
         // =======================================
 
@@ -272,19 +276,19 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
                     "misc": &config.misc
                 }),
             )
-            .unwrap_or_else(|e| {
-                panic!(
-                    "Couldn't render template for page `{}`: {e}",
+            .with_context(|| {
+                format!(
+                    "Couldn't render template for page `{}`",
                     path.file_name().to_string_lossy()
                 )
-            })
+            })?
             .as_bytes(),
             format!(
                 "{}/static/{}.html",
                 outdir.display(),
                 &filename_str[..filename_str.len() - 3]
             ),
-        )
+        )?;
         // =======================================
     }
 
@@ -297,27 +301,27 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
             &format!("{}/static/styles", &outdir.display()),
             #[cfg(feature = "sass")]
             &sassbin,
-        );
+        )?;
     }
 
     if !Path::new(&format!("{}/static/styles", outdir.display())).exists() {
-        fs::create_dir(&format!("{}/static/styles", outdir.display())).unwrap_or_else(|e| {
-            panic!(
-                "Couldn't create directory `{}/static/styles`: {e}",
+        fs::create_dir(&format!("{}/static/styles", outdir.display())).with_context(|| {
+            format!(
+                "Couldn't create directory `{}/static/styles`",
                 outdir.display()
             )
-        });
+        })?;
     }
 
     // * Copy built-in styles ====================
 
     for file in read_dir(CONFIG_PATH.join("templates").join("styles"))
-        .unwrap_or_else(|e| {
-            panic!(
-                "Couldn't get directory {}, {e}",
+        .with_context(|| {
+            format!(
+                "Couldn't get directory {}",
                 CONFIG_PATH.join("templates").join("styles").display()
             )
-        })
+        })?
         .filter_map(|e| e.ok())
     {
         std::fs::copy(
@@ -328,29 +332,30 @@ fn build(port: u16, outdir: &Path, sassbin: String) {
                 file.file_name().to_string_lossy()
             ),
         )
-        .unwrap_or_else(|e| {
-            panic!(
-                "Couldn't copy file `{}` to `{}/static/styles/{}`: {e}",
+        .with_context(|| {
+            format!(
+                "Couldn't copy file `{}` to `{}/static/styles/{}`",
                 file.path().display(),
                 outdir.display(),
                 file.file_name().to_string_lossy()
             )
-        });
+        })?;
     }
 
     // ===========================================
+    Ok(())
 }
 
 /// As the feature "sass" is enabled, we're going to let Sass take care of the job.
 #[cfg(feature = "sass")]
 #[cold]
 #[inline(never)]
-fn compile_styles(outdir: &str, sass_bin: &str) {
+fn compile_styles(outdir: &str, sass_bin: &str) -> Result<()> {
     // Compile custom styles
     Command::new(sass_bin)
         .arg(format!("src/styles:{}", &outdir))
-        .status()
-        .expect("Error while processing path with Sass");
+        .status()?;
+    Ok(())
 }
 
 /// As the feature "sass" isn't activated, all `.sass` (actually, all not `.css`) files are ignored. `*.css` files are copied to the output directory `styles` subdirectory.
@@ -359,14 +364,13 @@ fn compile_styles(outdir: &str, sass_bin: &str) {
 #[inline(never)]
 fn compile_styles(indir: &str, outdir: &str) {
     // Just move the files to the new directory
-    let paths = fs::read_dir("src/styles")
-        .unwrap_or_else(|e| panic!("Couldn't open directory {}: {e}", "src"));
+    let paths = fs::read_dir("src/styles").context("Couldn't open directory `src/styles`")?;
 
     for path in paths {
-        let path = path.expect("Couldn't process a path in directory");
+        let path = path.context("Couldn't process a path in directory")?;
         if !Path::new(&outdir).exists() {
             fs::create_dir(&outdir)
-                .unwrap_or_else(|e| panic!("Couldn't create directory {}: {e}", &outdir));
+                .with_context(|| format!("Couldn't create directory {}", &outdir));
         }
 
         let mut f = File::create(format!(
@@ -374,18 +378,18 @@ fn compile_styles(indir: &str, outdir: &str) {
             &outdir,
             &path.file_name().to_string_lossy()
         ))
-        .unwrap_or_else(|e| {
-            panic!(
+        .with_context(|| {
+            format!(
                 "Couldn't open file `{}/{}`: {e}",
                 &outdir,
                 &path.file_name().to_string_lossy()
             )
-        });
+        })?;
 
         if path.file_name().to_string_lossy().ends_with(".css") {
             f.write_if_different(
                 fs::read_to_string(path.path())
-                    .expect("Couldn't read path")
+                    .context("Couldn't read path")?
                     .as_bytes(),
                 format!("{}/static", &path.path().to_string_lossy()),
             )
@@ -396,25 +400,26 @@ fn compile_styles(indir: &str, outdir: &str) {
 /// Write to file ONLY if the contents are different
 trait WriteIfDifferent {
     /// Writes
-    fn write_if_different<P: AsRef<Path>>(&mut self, buf: &[u8], path: P);
+    fn write_if_different<P: AsRef<Path>>(&mut self, buf: &[u8], path: P) -> Result<()>;
 }
 
 impl<W> WriteIfDifferent for W
 where
     W: Write,
 {
-    fn write_if_different<P: AsRef<Path>>(&mut self, buf: &[u8], path: P) {
+    fn write_if_different<P: AsRef<Path>>(&mut self, buf: &[u8], path: P) -> Result<()> {
         // Check hashes
 
         if !(path.as_ref().exists()
             && blake3::hash(buf)
                 == blake3::hash(
                     fs::read_to_string(path)
-                        .expect("Couldn't read path")
+                        .context("Couldn't read path")?
                         .as_bytes(),
                 ))
         {
-            self.write_all(buf).expect("Couldn't write to file");
+            self.write_all(buf).context("Couldn't write to file")?;
         }
+        Ok(())
     }
 }
