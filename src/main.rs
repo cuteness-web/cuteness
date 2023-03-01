@@ -43,6 +43,7 @@ enum SCommand {
         sassbin: String,
     },
     Uninstall,
+	Clean,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -104,6 +105,7 @@ fn main() -> Result<()> {
             SCommand::Update => check_for_updates(),
             SCommand::Uninstall => uninstall(),
             SCommand::Setup => setup(),
+			SCommand::Clean => fs::remove_dir_all("www").context("Couldn't remove directory `www`")?
         }
     }
     Ok(())
