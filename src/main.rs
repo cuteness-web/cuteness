@@ -70,9 +70,7 @@ struct MiscConfig {
 #[derive(Serialize, Deserialize)]
 struct PageConfig {
     title: String,
-    subtitle: Option<String>,
-    tags: Option<Vec<String>>,
-    date: String,
+	pageconf: Option<HashMap<String, String>>,
     additional_css: Option<Vec<String>>,
 }
 
