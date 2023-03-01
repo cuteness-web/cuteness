@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### Bug Fixes
+
+-  Add boilerplate for `introduction.md` + Fix naming bug in `init`
+ 
+- [**breaking**]  change project name
+ 
+
+## [0.7.1] - 2023-03-01
+
+### Documentation
+
+-  Add documentation to subcommands
+ 
+
+## [0.7.0] - 2023-03-01
+
+### Features
+
+-  Add `clean` subcommand
+ 
+
+## [0.6.3] - 2023-03-01
+
+### Bug Fixes
+
+-  Remove `PageConfig` fields and add `pageconf` as an user open dictionary
+ 
+
+### Miscellaneous Tasks
+
+-  Update changelog
+ 
+
 ## [0.6.2] - 2023-03-01
 
 ### Bug Fixes
