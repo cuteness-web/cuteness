@@ -1,3 +1,4 @@
+use core::panic;
 use std::{borrow::Cow, path::{PathBuf, Path}, fs::{remove_dir_all, create_dir}, process::Command};
 
 use emojis::get_by_shortcode;
@@ -83,5 +84,7 @@ pub fn init() {
 	
 	std::fs::write("wawaconfig.toml", include_bytes!("../wawaconfig.default.toml")).unwrap_or_else(|e| panic!("Couldn't create `wawaconfig.toml`: {e}"));
 
-	std::fs::write("SUMMARY.md", include_bytes!("../SUMMARY.default.toml")).unwrap_or_else(|e| panic!("Couldn't create `SUMMARY.md`: {e}"));
+	std::fs::write("SUMMARY.toml", include_bytes!("../SUMMARY.default.toml")).unwrap_or_else(|e| panic!("Couldn't create `SUMMARY.md`: {e}"));
+
+	std::fs::write("src/introduction.md", include_bytes!("../introduction.default.md")).unwrap_or_else(|e| panic!("Couldn't create `src/introduction.md`: {e}"));
 }
