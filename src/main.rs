@@ -27,9 +27,13 @@ struct Args {
 
 #[derive(clap::Subcommand)]
 enum SCommand {
+	/// Initializes the necessary files (configuration, placeholders...), ready to be modified.
     Init,
+	/// Updates the internal configuration files in the configuration path; this is an enhanced `git pull`.
     Update,
+	/// Creates the necessary configuration directory and its internal files; this is an enhanced `git clone`.
     Setup,
+	/// Builds your `src` directory into `www`
     Build {
         /// Connection port
         #[arg(long, default_value = "8080")]
@@ -42,7 +46,9 @@ enum SCommand {
         #[arg(long, default_value = "sass")]
         sassbin: String,
     },
+	/// Deletes all configuration files. `cargo uninstall` will not remove these, so before using `cargo uninstall`, use this command.
     Uninstall,
+	/// Deletes the `www` directory
 	Clean,
 }
 
