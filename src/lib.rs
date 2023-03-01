@@ -8,10 +8,10 @@ use regex::Regex;
 lazy_static! {
     static ref REQUOTE: Regex = Regex::new("\"(.*?)\"").unwrap();
     static ref REEMOJI: Regex = Regex::new(":(.*?):").unwrap();
-    pub static ref CONFIG_PATH: PathBuf = home::cargo_home().expect("Couldn't get Cargo home").join("wawatemplating-config");
+    pub static ref CONFIG_PATH: PathBuf = home::cargo_home().expect("Couldn't get Cargo home").join("cuteness-config");
 }
 
-const REPO_URL: &str = "https://github.com/blyxyas/wawatemplating.git";
+const REPO_URL: &str = "https://github.com/blyxyas/cuteness.git";
 
 /// Replace straight quotes (") with curly quotes, U+201C (“) and U+201D (”)
 #[inline(always)]
@@ -61,7 +61,7 @@ pub fn setup() {
 
 	Command::new("git").current_dir(CONFIG_PATH.as_path()).args(["pull", "--depth=1", "origin", "main"]).status().expect("Couldn't pull");
 
-	println!("WAWATemplating was successfully configured!");
+	println!("Cuteness was successfully configured!");
 }
 
 #[inline]
@@ -82,7 +82,7 @@ pub fn uninstall() {
 pub fn init() {
 	create_dir("src").unwrap_or_else(|e| panic!("Couldn't create directory 'src': {e}"));
 	
-	std::fs::write("wawaconfig.toml", include_bytes!("../wawaconfig.default.toml")).unwrap_or_else(|e| panic!("Couldn't create `wawaconfig.toml`: {e}"));
+	std::fs::write("cuteconfig.toml", include_bytes!("../cuteconfig.default.toml")).unwrap_or_else(|e| panic!("Couldn't create `cuteconfig.toml`: {e}"));
 
 	std::fs::write("SUMMARY.toml", include_bytes!("../SUMMARY.default.toml")).unwrap_or_else(|e| panic!("Couldn't create `SUMMARY.md`: {e}"));
 

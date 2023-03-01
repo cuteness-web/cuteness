@@ -18,7 +18,7 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
     ### {{ group | upper_first }}
     {% for commit in commits %}
-        - {% if commit.breaking %}[**breaking**] {% endif %} {% if commit.message is ending_with("(desc.)") %}{{ commit.message | upper_first | trim_end_matches(pat="(desc.)") }}[(desc. at `{{ commit.id | truncate(length=7, end="") }}`)](https://github.com/blyxyas/wawatemplating/commit/{{ commit.id }})
+        - {% if commit.breaking %}[**breaking**] {% endif %} {% if commit.message is ending_with("(desc.)") %}{{ commit.message | upper_first | trim_end_matches(pat="(desc.)") }}[(desc. at `{{ commit.id | truncate(length=7, end="") }}`)](https://github.com/blyxyas/cuteness/commit/{{ commit.id }})
 		{% else %}{{ commit.message }}
 		{% endif %} \
     {% endfor %}
@@ -74,5 +74,5 @@ sort_commits = "oldest"
 # limit_commits = 42
 
 link_parsers = [
-	{ pattern = "#(\\d+)", href = "https://github.com/blyxyas/wawatemplating/issues/$1" },
+	{ pattern = "#(\\d+)", href = "https://github.com/blyxyas/cuteness/issues/$1" },
 ]

@@ -1,19 +1,19 @@
-# WAWATemplating
+# Cuteness
 
 ###### **STATUS: WIP**
 
-WAWATemplating is a static site generator designed to be very flexible, it uses Markdown (specifically, [CommonMark](https://commonmark.org/) [^1]) and [Sass](https://sass-lang.com/) [^2]. Generates a simple web-server in Go, ready to be compiled and executed.
+*Cuteness* is a static site generator designed to be very flexible, it uses Markdown (specifically, [CommonMark](https://commonmark.org/) [^1]) and [Sass](https://sass-lang.com/) [^2]. Generates a simple web-server in Go, ready to be compiled and executed.
 
 ## ⚙️ Configuration
 
-WAWATemplating is very configurable, both with internal values and external values (outer / page configuration)
+*Cuteness* is very configurable, both with internal values and external values (outer / page configuration)
 
-The configuration is found at the file `wawaconfig.toml`. The configuration file contains settings for generating the web-server, as well as variables that you can use in your Markdown files.
+The configuration is found at the file `cuteconfig.toml`. The configuration file contains settings for generating the web-server, as well as variables that you can use in your Markdown files.
 
 ### Example
 
 ```toml
-# wawaconfig.default.toml
+# cuteconfig.default.toml
 [routing]
 init_behaviour = "fmt.Printf(\"Starting webserver at port 8080\")"
 fail_behaviour = "log.Fatal(err)"

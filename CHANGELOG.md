@@ -77,7 +77,7 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
--  Reaplce `outdir` argument from `static` to `www` [(desc. at `26b072c`)](https://github.com/blyxyas/wawatemplating/commit/26b072cd38f4ac0533de9190cd4ab0f5c3712f9e)
+-  Reaplce `outdir` argument from `static` to `www` [(desc. at `26b072c`)](https://github.com/blyxyas/cuteness/commit/26b072cd38f4ac0533de9190cd4ab0f5c3712f9e)
  
 
 ## [0.4.1] - 2023-02-26
@@ -98,7 +98,7 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
--  Replace whole-clone of the repository with *shallow clone* [(desc. at `3474275`)](https://github.com/blyxyas/wawatemplating/commit/3474275dbb3d0862568dc4d48852079c33d621e1)
+-  Replace whole-clone of the repository with *shallow clone* [(desc. at `3474275`)](https://github.com/blyxyas/cuteness/commit/3474275dbb3d0862568dc4d48852079c33d621e1)
  
 
 ### Miscellaneous Tasks
@@ -157,11 +157,11 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
--  Add some new config options [(desc. at `0ae658c`)](https://github.com/blyxyas/wawatemplating/commit/0ae658c3af2a47d1bd64efa08be9aade095e970a)
+-  Add some new config options [(desc. at `0ae658c`)](https://github.com/blyxyas/cuteness/commit/0ae658c3af2a47d1bd64efa08be9aade095e970a)
  
 -  Add syntax highlighting support (`highlight.js`)
  
--  Add subcommands [(desc. at `3100220`)](https://github.com/blyxyas/wawatemplating/commit/31002203e7dab2b80ddf38742e43c301b2f4ae84)
+-  Add subcommands [(desc. at `3100220`)](https://github.com/blyxyas/cuteness/commit/31002203e7dab2b80ddf38742e43c301b2f4ae84)
  
 
 ### Miscellaneous Tasks

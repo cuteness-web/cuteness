@@ -9,14 +9,14 @@ The project uses some conventions to keep the repository cohesive and easy to wo
 Getting started is pretty easy, you just need a issue to fix! Now, when you have your issue, create a fork of this repository, then clone it:
 
 ```
-git clone git@github.com:<YOUR USERNAME>/wawatemplating
+git clone git@github.com:<YOUR USERNAME>/cuteness
 ```
 
 Now, create a new branch, like `my-cool-branch-that-fixes-things` and start working! **Make sure to read the following sections before starting, as they are important.**
 
 ## Commits
 
-We use [`git-cliff`](https://github.com/orhun/git-cliff) to generate the [CHANGELOG](https://github.com/blyxyas/wawatemplating/CHANGELOG/blob/main/CHANGELOG.md), that's why we use the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification with the following types:
+We use [`git-cliff`](https://github.com/orhun/git-cliff) to generate the [CHANGELOG](https://github.com/blyxyas/cuteness/CHANGELOG/blob/main/CHANGELOG.md), that's why we use the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification with the following types:
 
 * `feat:`
 * `fix`

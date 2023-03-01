@@ -150,6 +150,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "cuteness"
+version = "0.7.1"
+dependencies = [
+ "anyhow",
+ "blake3",
+ "clap",
+ "emojis",
+ "handlebars",
+ "hashbrown 0.13.2",
+ "home",
+ "lazy_static",
+ "pulldown-cmark",
+ "regex",
+ "serde",
+ "serde_json",
+ "toml",
+ "yaml-front-matter",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -724,26 +744,6 @@ dependencies = [
  "same-file",
  "winapi",
  "winapi-util",
-]
-
-[[package]]
-name = "wawatemplating"
-version = "0.7.1"
-dependencies = [
- "anyhow",
- "blake3",
- "clap",
- "emojis",
- "handlebars",
- "hashbrown 0.13.2",
- "home",
- "lazy_static",
- "pulldown-cmark",
- "regex",
- "serde",
- "serde_json",
- "toml",
- "yaml-front-matter",
 ]
 
 [[package]]

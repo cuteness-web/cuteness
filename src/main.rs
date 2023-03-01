@@ -8,7 +8,7 @@ use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use toml::Value;
-use wawatemplating::*;
+use cuteness::*;
 use yaml_front_matter::YamlFrontMatter;
 
 use std::fs::{self, canonicalize, read_dir, read_to_string, File};
@@ -137,13 +137,13 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
     // * Read configuration ========================
 
     let mut content = String::new();
-    if !Path::new("wawaconfig.toml").exists() {
-        panic!("Couldn't find wawaconfig.toml");
+    if !Path::new("cuteconfig.toml").exists() {
+        panic!("Couldn't find cuteconfig.toml");
     }
 
-    let mut f = File::open("wawaconfig.toml").context("Couldn't open `wawaconfig.toml`")?;
+    let mut f = File::open("cuteconfig.toml.toml").context("Couldn't open `cuteconfig.toml`")?;
     f.read_to_string(&mut content)
-        .context("Couldn't read configuration `wawaconfig.toml`")?;
+        .context("Couldn't read configuration `cuteconfig.toml`")?;
 
     let mut config = toml::from_str::<Config>(&content).context("Couldn't parse configuration")?;
 
