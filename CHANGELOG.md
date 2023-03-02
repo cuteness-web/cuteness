@@ -6,9 +6,21 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
--  Add boilerplate for `introduction.md` + Fix naming bug in `init`
- 
 - [**breaking**]  change project name
+ 
+-  Fix bug where it would try to open `cuteconfig.toml.toml` instead of `cuteconfig.toml`
+ 
+
+### Miscellaneous Tasks
+
+-  Update changelog
+ 
+
+## [0.7.2] - 2023-03-01
+
+### Bug Fixes
+
+-  Add boilerplate for `introduction.md` + Fix naming bug in `init`
  
 
 ## [0.7.1] - 2023-03-01
