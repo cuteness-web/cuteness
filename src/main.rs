@@ -141,7 +141,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
         panic!("Couldn't find cuteconfig.toml");
     }
 
-    let mut f = File::open("cuteconfig.toml.toml").context("Couldn't open `cuteconfig.toml`")?;
+    let mut f = File::open("cuteconfig.toml").context("Couldn't open `cuteconfig.toml`")?;
     f.read_to_string(&mut content)
         .context("Couldn't read configuration `cuteconfig.toml`")?;
 
@@ -217,7 +217,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
         })?;
     }
 
-    let paths = fs::read_dir("src").with_context(|| format!("Couldn't read directory `src`"))?;
+    let paths = fs::read_dir("src").context("Couldn't read directory `src`")?;
 
     for path in paths {
         // * Convert Markdown file to HTML =========
