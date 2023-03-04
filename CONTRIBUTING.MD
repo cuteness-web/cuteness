@@ -64,8 +64,8 @@ You can set up a git hook to make sure they're always synchronized.
 
 ## Synchronizing the README
 
-We use [`cargo-sync-readme`](https://crates.io/crates/cargo-sync-readme) to sync the README with our internal documentation (found in `src/lib.rs`). If you make any changes to the documentation, you must synchronize it to the README.
+We use [`cargo-rdme`](https://crates.io/crates/cargo-rdme) to sync the README with our internal documentation (found in `src/lib.rs`). If you make any changes to the documentation, you must synchronize it to the README.
 
 ```terminal
-cargo sync-readme -f lib
+cargo rdme
 ```
