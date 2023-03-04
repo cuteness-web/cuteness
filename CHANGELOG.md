@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.7.3] - 2023-03-04
 
 ### Bug Fixes
 
@@ -11,8 +11,15 @@ All notable changes to this project will be documented in this file.
 -  Fix bug where it would try to open `cuteconfig.toml.toml` instead of `cuteconfig.toml`
  
 
+### Documentation
+
+-  Create general documentation in `lib.rs`.
+ 
+
 ### Miscellaneous Tasks
 
+-  Update changelog
+ 
 -  Update changelog
  
 
