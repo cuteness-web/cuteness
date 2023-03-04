@@ -2,13 +2,13 @@
 
 use anyhow::{Context, Result};
 use clap::Parser as Parse;
+use cuteness::*;
 use handlebars::no_escape;
 use hashbrown::HashMap;
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use toml::Value;
-use cuteness::*;
 use yaml_front_matter::YamlFrontMatter;
 
 use std::fs::{self, canonicalize, read_dir, read_to_string, File};
@@ -26,14 +26,15 @@ struct Args {
 }
 
 #[derive(clap::Subcommand)]
+#[allow(clippy::almost_swapped)]
 enum SCommand {
-	/// Initializes the necessary files (configuration, placeholders...), ready to be modified.
+    /// Initializes the necessary files (configuration, placeholders...), ready to be modified.
     Init,
-	/// Updates the internal configuration files in the configuration path; this is an enhanced `git pull`.
+    /// Updates the internal configuration files in the configuration path; this is an enhanced `git pull`.
     Update,
-	/// Creates the necessary configuration directory and its internal files; this is an enhanced `git clone`.
+    /// Creates the necessary configuration directory and its internal files; this is an enhanced `git clone`.
     Setup,
-	/// Builds your `src` directory into `www`
+    /// Builds your `src` directory into `www`
     Build {
         /// Connection port
         #[arg(long, default_value = "8080")]
@@ -46,10 +47,10 @@ enum SCommand {
         #[arg(long, default_value = "sass")]
         sassbin: String,
     },
-	/// Deletes all configuration files. `cargo uninstall` will not remove these, so before using `cargo uninstall`, use this command.
+    /// Deletes all configuration files. `cargo uninstall` will not remove these, so before using `cargo uninstall`, use this command.
     Uninstall,
-	/// Deletes the `www` directory
-	Clean,
+    /// Deletes the `www` directory
+    Clean,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -77,7 +78,7 @@ struct MiscConfig {
 #[derive(Serialize, Deserialize)]
 struct PageConfig {
     title: String,
-	pageconf: Option<HashMap<String, String>>,
+    pageconf: Option<HashMap<String, Value>>,
     additional_css: Option<Vec<String>>,
 }
 
@@ -111,7 +112,9 @@ fn main() -> Result<()> {
             SCommand::Update => check_for_updates(),
             SCommand::Uninstall => uninstall(),
             SCommand::Setup => setup(),
-			SCommand::Clean => fs::remove_dir_all("www").context("Couldn't remove directory `www`")?
+            SCommand::Clean => {
+                fs::remove_dir_all("www").context("Couldn't remove directory `www`")?
+            }
         }
     }
     Ok(())

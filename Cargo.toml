@@ -14,6 +14,7 @@ codegen-units = 1
 anyhow = "1.0.69"
 blake3 = "1.3.3"
 clap = { version = "4.1.6", features = ["derive"] }
+document-features = "0.2.7" 
 emojis = "0.5.2"
 handlebars = { version = "4.3.6", features = ["dir_source"] }
 hashbrown = { version = "0.13.2", features = ["serde"] }
@@ -26,7 +27,14 @@ serde_json = "1.0.93"
 toml = "0.7.2"
 yaml-front-matter = "0.1.0"
 
+
 # FIXME: Change this to a configuration option
 [features]
 default = ["sass"]
+#! ### Features
+## Enables using *[Sass](https://sass-lang.com/)* as a preprocessor. It will preprocess your `.sass` files in `src/static` before copying them to the output directory.
+## 
+## As a side effect, it also enables the configuration option `sassbin`[^2]
+##
+## [^2]: The option `sassbin` indicates the name of the Sass preprocessor binary. *(default: `sass`)*
 sass = []
