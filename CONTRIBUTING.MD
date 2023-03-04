@@ -56,8 +56,16 @@ You can use the crate [`cargo-bump`](https://crates.io/crates/cargo-bump) to syn
 
 If you're using bash or similar, you can use the following command to do it automatically:
 
-```
+```terminal
 cargo bump $(git describe --tags --abbrev=0 | cut -c 2-) 
 ```
 
 You can set up a git hook to make sure they're always synchronized.
+
+## Synchronizing the README
+
+We use [`cargo-sync-readme`](https://crates.io/crates/cargo-sync-readme) to sync the README with our internal documentation (found in `src/lib.rs`). If you make any changes to the documentation, you must synchronize it to the README.
+
+```terminal
+cargo sync-readme -f lib
+```

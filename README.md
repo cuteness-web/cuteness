@@ -325,3 +325,11 @@ The files content are preprocessed before being written, these preprocessors are
 
 
 <!-- cargo-sync-readme end -->
+
+## License
+
+This project uses the **GNU General Public License v3.0**. More information about licensing available in [LICENSE](https://github.com/blyxyas/cuteness/blob/main/LICENSE).
+
+## Contributing
+
+All contributions are greatly welcomed! A very useful contribution guide can be found at [CONTRIBUTING.MD](https://github.com/blyxyas/cuteness/blob/main/CONTRIBUTING.MD).
