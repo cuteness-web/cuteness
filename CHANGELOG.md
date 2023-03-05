@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.4] - 2023-03-05
+
+### Bug Fixes
+
+-  Migrate from `cargo-sync-readme` (abandoned) to `cargo-rdme`
+ 
+-  Rearrange help message subcommands to a more sensible order.
+ 
+
+### Documentation
+
+-  Sync `lib.rs` with `README.md`
+ 
+-  Add licensing + contributing sections to `README.md`. + Add a "Synchronizing the README" section to CONTRIBUTING.md
+ 
+
+### Miscellaneous Tasks
+
+-  Update changelog
+ 
+-  Create `LICENSE`
+ 
+
 ## [0.7.3] - 2023-03-04
 
 ### Bug Fixes
