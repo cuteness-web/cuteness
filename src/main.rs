@@ -28,29 +28,29 @@ struct Args {
 #[derive(clap::Subcommand)]
 #[allow(clippy::almost_swapped)]
 enum SCommand {
+	/// Builds your `src` directory into `www`
+	Build {
+		/// Connection port
+		#[arg(long, default_value = "8080")]
+		port: u16,
+		/// Output directory
+		#[arg(long, default_value = "www")]
+		outdir: String,
+		/// Command for the sass compiler. E.g. "sass"
+		#[cfg(feature = "sass")]
+		#[arg(long, default_value = "sass")]
+		sassbin: String,
+	},
     /// Initializes the necessary files (configuration, placeholders...), ready to be modified.
     Init,
     /// Updates the internal configuration files in the configuration path; this is an enhanced `git pull`.
     Update,
     /// Creates the necessary configuration directory and its internal files; this is an enhanced `git clone`.
     Setup,
-    /// Builds your `src` directory into `www`
-    Build {
-        /// Connection port
-        #[arg(long, default_value = "8080")]
-        port: u16,
-        /// Output directory
-        #[arg(long, default_value = "www")]
-        outdir: String,
-        /// Command for the sass compiler. E.g. "sass"
-        #[cfg(feature = "sass")]
-        #[arg(long, default_value = "sass")]
-        sassbin: String,
-    },
-    /// Deletes all configuration files. `cargo uninstall` will not remove these, so before using `cargo uninstall`, use this command.
-    Uninstall,
     /// Deletes the `www` directory
     Clean,
+    /// Deletes all configuration files. `cargo uninstall` will not remove these, so before using `cargo uninstall`, use this command.
+    Uninstall,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
