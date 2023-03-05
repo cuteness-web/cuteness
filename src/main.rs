@@ -13,7 +13,7 @@ use yaml_front_matter::YamlFrontMatter;
 
 use std::fs::{self, canonicalize, read_dir, read_to_string, File};
 use std::io::{Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[cfg(feature = "sass")]
 use std::process::Command;
@@ -28,19 +28,19 @@ struct Args {
 #[derive(clap::Subcommand)]
 #[allow(clippy::almost_swapped)]
 enum SCommand {
-	/// Builds your `src` directory into `www`
-	Build {
-		/// Connection port
-		#[arg(long, default_value = "8080")]
-		port: u16,
-		/// Output directory
-		#[arg(long, default_value = "www")]
-		outdir: String,
-		/// Command for the sass compiler. E.g. "sass"
-		#[cfg(feature = "sass")]
-		#[arg(long, default_value = "sass")]
-		sassbin: String,
-	},
+    /// Builds your `src` directory into `www`
+    Build {
+        /// Connection port
+        #[arg(long, default_value = "8080")]
+        port: u16,
+        /// Output directory
+        #[arg(long, default_value = "www")]
+        outdir: String,
+        /// Command for the sass compiler. E.g. "sass"
+        #[cfg(feature = "sass")]
+        #[arg(long, default_value = "sass")]
+        sassbin: String,
+    },
     /// Initializes the necessary files (configuration, placeholders...), ready to be modified.
     Init,
     /// Updates the internal configuration files in the configuration path; this is an enhanced `git pull`.
@@ -80,6 +80,13 @@ struct PageConfig {
     title: String,
     pageconf: Option<HashMap<String, Value>>,
     additional_css: Option<Vec<String>>,
+    method: Method,
+}
+
+#[derive(Serialize)]
+struct Page {
+    config: PageConfig,
+    path: PathBuf,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -121,6 +128,13 @@ fn main() -> Result<()> {
 }
 
 fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
+    dbg!("DELETE THIS LATER, THIS CANNOT GO IN PRODUCTION");
+    dbg!("DELETE THIS LATER, THIS CANNOT GO IN PRODUCTION");
+    dbg!("DELETE THIS LATER, THIS CANNOT GO IN PRODUCTION");
+    dbg!("DELETE THIS LATER, THIS CANNOT GO IN PRODUCTION");
+    dbg!("DELETE THIS LATER, THIS CANNOT GO IN PRODUCTION");
+    dbg!("DELETE THIS LATER, THIS CANNOT GO IN PRODUCTION");
+
     // * Register all templates ==================
 
     let mut reg = handlebars::Handlebars::new();
@@ -132,6 +146,12 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
     .context("Couldn't register `routing.hbs`")?;
     reg.register_template_file("page_template", CONFIG_PATH.join("templates/page.hbs"))
         .context("Couldn't register page.hbs")?;
+
+    reg.register_template_file(
+        "rocket_routing_template",
+        CONFIG_PATH.join("templates/routing/src/main.rs.hbs"),
+    )
+    .context("Couldn't register `routing/src/routing.hbs`")?;
 
     // ===========================================
 
@@ -168,16 +188,17 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
         )
     })?;
 
+
     f.write_all(
         reg.render(
             "routing_template",
             &json!({
-				"port": port,
-				"directory": canonicalize(outdir).context("Couldn't canonicalize output directory")?.join("static"),
-				"init_behaviour": config.routing.init_behaviour,
-				"fail_behaviour": config.routing.fail_behaviour,
-				"imports": config.routing.imports.join("\n\t")
-			}),
+    			"port": port,
+    			"directory": canonicalize(outdir).context("Couldn't canonicalize output directory")?.join("static"),
+    			"init_behaviour": config.routing.init_behaviour,
+    			"fail_behaviour": config.routing.fail_behaviour,
+    			"imports": config.routing.imports.join("\n\t")
+    		}),
         )
         .context("Couldn't render `routing.go`")?
         .as_bytes(),
@@ -221,6 +242,8 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
     }
 
     let paths = fs::read_dir("src").context("Couldn't read directory `src`")?;
+
+	// let mut pages = Vec::new();
 
     for path in paths {
         // * Convert Markdown file to HTML =========
@@ -299,6 +322,10 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
             ),
         )?;
         // =======================================
+		// pages.push(Page {
+		// 	config: parsed_markdown.metadata,
+		// 	path: path.path()
+		// })
     }
 
     // ===========================================
@@ -352,6 +379,18 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
     }
 
     // ===========================================
+
+    // println!("{}", 
+	// reg.render(
+	// 	"rocket_routing_template",
+	// 	&json!({
+	// 		"port": port,
+	// 		"directory": canonicalize(outdir).context("Couldn't canonicalize output directory")?.join("static"),
+	// 		"routing": config.routing,
+	// 		"pages": pages
+	// 	}),
+	// ).context("Couldn't render `routing.go`")?);
+
     Ok(())
 }
 

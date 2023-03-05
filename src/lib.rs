@@ -336,6 +336,7 @@
 //! 
 //! [^5]: There are some ideas about porting the generated web-server to Rust. As the project isn't v1.0 yet, this may change in the future.
 
+use serde::{Deserialize, Serialize};
 use core::panic;
 use std::{
     borrow::Cow,
@@ -487,4 +488,19 @@ pub fn init() {
         include_bytes!("../introduction.default.md"),
     )
     .unwrap_or_else(|e| panic!("Couldn't create `src/introduction.md`: {e}"));
+}
+
+#[derive(Serialize, Deserialize, PartialEq)]
+pub enum Method {
+	POST,
+	GET,
+}
+
+impl Method {
+	pub fn method(&self) -> &str {
+		if *self == Method::GET {
+			return "GET"
+		};
+		"POST"
+	}
 }
