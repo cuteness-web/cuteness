@@ -128,13 +128,6 @@ fn main() -> Result<()> {
 }
 
 fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
-    dbg!("DELETE THIS LATER, THIS CANNOT GO IN PRODUCTION");
-    dbg!("DELETE THIS LATER, THIS CANNOT GO IN PRODUCTION");
-    dbg!("DELETE THIS LATER, THIS CANNOT GO IN PRODUCTION");
-    dbg!("DELETE THIS LATER, THIS CANNOT GO IN PRODUCTION");
-    dbg!("DELETE THIS LATER, THIS CANNOT GO IN PRODUCTION");
-    dbg!("DELETE THIS LATER, THIS CANNOT GO IN PRODUCTION");
-
     // * Register all templates ==================
 
     let mut reg = handlebars::Handlebars::new();
