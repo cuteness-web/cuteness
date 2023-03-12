@@ -25,9 +25,9 @@
 //!     * [Not using Sass](#styles.css)
 //! * [Routing](#routing)
 //! * [Preprocessors](#preprocessors)
-//! 
+//!
 //! ## `cuteconfig.toml` <a name="cuteconfig"></a>
-//! 
+//!
 //!
 //! `cuteconfig.toml` is the file used to store configuration settings. It's default configuration in the current version is: ([latest version](https://github.com/blyxyas/cuteness/blob/main/cuteconfig.default.toml))
 //!
@@ -262,41 +262,41 @@
 //! `cuteness uninstall` will delete the internal templating and styling files stored in `<CARGO HOME>/cuteness-config/`.
 //!
 //! **This will not uninstall the binary**, you'll have to use `cargo uninstall cuteness`. This subcommand needs to be executed before doing that so it's a clean uninstall.
-//! 
+//!
 //! ## `help` <a name="subcommands.help"></a>
-//! 
+//!
 //! `cuteness help` displays a help message.
-//! 
+//!
 //! # Styles <a name="styles"></a>
-//! 
+//!
 //! Styling files are stored at `src/styles` and can be imported in a per-page basis using the `additional_css` optional key on the [page's front-matter](#frontmatter).
-//! 
+//!
 //! The special built-in `index.css` file is always imported, this file contains basic layout options for the correct display of your page. You can check the Sass source of `index.css` [here](https://github.com/blyxyas/cuteness/blob/main/src-styles/index.sass).
-//! 
+//!
 //! ## Using Sass <a name="styles.sass"></a>
-//! 
+//!
 //! You can use [Sass](https://sass-lang.com/) as a preprocessor for your files, just activate the feature `sass` when installing the binary (enabled by default) and store your `.sass` files in `src/styles` as any other `.css` file. They will be compiled with `cuteness build`.
-//! 
+//!
 //! ## Not using Sass <a name="styles.css"></a>
-//! 
+//!
 //! Almost the same, just locate your `.css` files at `src/styles` and they will not get compiled, but only copied to the output directory.
-//! 
+//!
 //! # Routing <a name="routing"></a>
-//! 
+//!
 //! When using `cuteness build`, an output directory containing some static files and a simple web-server will be generated.
-//! 
+//!
 //! An example of this webserver would be something like this:
-//! 
+//!
 //! ```go
 //! package main
-//! 
+//!
 //! import (
 //!     "fmt"
 //!     "log"
 //!     "net/http"
 //!     "strings"
 //! )
-//! 
+//!
 //! func main() {
 //!     fmt.Printf("Starting webserver at port 8080")
 //!     fs := http.FileServer(http.Dir("/home/alejandra/git/wawat/test/www/static"))
@@ -306,37 +306,36 @@
 //!         }
 //!         fs.ServeHTTP(w, r)
 //!     })
-//! 
+//!
 //!     if err := http.ListenAndServe(":8080", nil); err != nil {
 //!         log.Fatal(err)
 //!     }
 //! }
 //! ```
-//! 
+//!
 //! Note that **you need Go installed to run it[^5]**. The way to run it would be using:
-//! 
+//!
 //! ```bash
 //! go run www/routing.go
 //! ```
 //!
 //! This will create a local web-server which you can access by going to *http://localhost:8080/*
-//! 
+//!
 //! As the project is still in development, efforts about using actual servers available on the internet are still very far from being started.
-//! 
+//!
 //! # Preprocessors <a name="preprocessors"></a>
-//! 
+//!
 //! The files content are preprocessed before being written, these preprocessors are used to change \"straight quotes\" to “curly quotes”, or to change emojicodes "`:cat:`" to actual emojis 🐱. These preprocessors are applied automatically and should not cause any problems.
-//! 
+//!
 #![doc = ::document_features::document_features!()]
 //! [^1]: The tool specifically uses [KaTeX](https://katex.org/), specialized on equations.
 //!
 //! [^3]: `Handlebars-rs` uses the [Handlebars templating language](https://handlebarsjs.com/)
 //!
 //! [^4]: Specifically, our parser ([`pulldown-cmark`](https://docs.rs/pulldown-cmark/latest/pulldown_cmark/)) uses the [CommonMark](https://commonmark.org/) specification.
-//! 
+//!
 //! [^5]: There are some ideas about porting the generated web-server to Rust. As the project isn't v1.0 yet, this may change in the future.
 
-use serde::{Deserialize, Serialize};
 use core::panic;
 use std::{
     borrow::Cow,
@@ -348,6 +347,7 @@ use std::{
 use emojis::get_by_shortcode;
 use lazy_static::lazy_static;
 use regex::Regex;
+use serde::{Deserialize, Serialize};
 
 lazy_static! {
     static ref REQUOTE: Regex = Regex::new("\"(.*?)\"").unwrap();
@@ -355,6 +355,8 @@ lazy_static! {
     pub static ref CONFIG_PATH: PathBuf = home::cargo_home()
         .expect("Couldn't get Cargo home")
         .join("cuteness-config");
+    // Regex for < and >
+    static ref RELTGT: Regex = Regex::new("<(.*?)>").unwrap();
 }
 
 const REPO_URL: &str = "https://github.com/blyxyas/cuteness.git";
@@ -373,6 +375,17 @@ pub fn emojis(content: &str) -> String {
         if let Some(emoji) = get_by_shortcode(&content[cap.start() + 1..cap.end() - 1]) {
             result = content.replace(cap.as_str(), emoji.as_str());
         };
+    }
+    result
+}
+
+#[inline]
+pub fn params_in_path(path: &Path) -> Vec<String> {
+    let mut result = Vec::new();
+    {
+        for cap in RELTGT.find_iter(&path.to_string_lossy()) {
+            result.push(path.to_string_lossy()[cap.start() + 1..cap.end() - 1].to_string());
+        }
     }
     result
 }
@@ -490,17 +503,70 @@ pub fn init() {
     .unwrap_or_else(|e| panic!("Couldn't create `src/introduction.md`: {e}"));
 }
 
-#[derive(Serialize, Deserialize, PartialEq)]
+/// As the feature "sass" is enabled, we're going to let Sass take care of the job.
+#[cfg(feature = "sass")]
+#[cold]
+#[inline(never)]
+pub fn compile_styles(outdir: &str, sass_bin: &str) -> anyhow::Result<()> {
+    // Compile custom styles
+    Command::new(sass_bin)
+        .arg(format!("src/styles:{}", &outdir))
+        .status()?;
+    Ok(())
+}
+
+/// As the feature "sass" isn't activated, all `.sass` (actually, all not `.css`) files are ignored. `*.css` files are copied to the output directory `styles` subdirectory.
+#[cfg(not(feature = "sass"))]
+#[cold]
+#[inline(never)]
+pub fn compile_styles(indir: &str, outdir: &str) {
+    // Just move the files to the new directory
+    let paths = fs::read_dir("src/styles").context("Couldn't open directory `src/styles`")?;
+
+    for path in paths {
+        let path = path.context("Couldn't process a path in directory")?;
+        if !Path::new(&outdir).exists() {
+            fs::create_dir(&outdir)
+                .with_context(|| format!("Couldn't create directory {}", &outdir));
+        }
+
+        let mut f = File::create(format!(
+            "{}/{}",
+            &outdir,
+            &path.file_name().to_string_lossy()
+        ))
+        .with_context(|| {
+            format!(
+                "Couldn't open file `{}/{}`: {e}",
+                &outdir,
+                &path.file_name().to_string_lossy()
+            )
+        })?;
+
+        if path.file_name().to_string_lossy().ends_with(".css") {
+            f.write_if_different(
+                fs::read_to_string(path.path())
+                    .context("Couldn't read path")?
+                    .as_bytes(),
+                format!("{}/static", &path.path().to_string_lossy()),
+            )
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Default)]
 pub enum Method {
-	POST,
-	GET,
+    #[default]
+    GET,
+    POST,
 }
 
 impl Method {
-	pub fn method(&self) -> &str {
-		if *self == Method::GET {
-			return "GET"
-		};
-		"POST"
-	}
+    pub fn as_str(&self) -> &str {
+        if *self == Method::GET {
+            "GET"
+        } else {
+            "POST"
+        }
+    }
 }

@@ -1,0 +1,39 @@
+#![allow(dead_code, non_camel_case_types)]
+#![feature(decl_macro)]
+use rocket::{Rocket, get, post, launch, catch, Request, fs::{NamedFile, FileServer} };
+use rocket_dyn_templates::{Template, context};
+use std::path::PathBuf;
+
+type string = String;
+type int = i64;
+type long = i128;
+type float = f32;
+type longfloat = f64;
+type array<T> = Vec::<T>;
+
+
+{{#each pages}}
+#[{{lower this.config.method}}("/{{cut_start (cut_end this.path 3) 4}}")]
+pub async fn {{sanitize (file_name this.path)}}({{#each this.config.params}}{{this.name}}: {{this.type}}, {{/each}}) -> {{#if (is_pure this.path) }}Option<NamedFile>{{else}}Template{{/if}} {
+	{{#if (not (is_pure this.path))}}
+		Template::render("page", context! { {{#each this.config.params}}{{this.name}}: {{this.name}}{{/each}} })
+	{{else}}
+		let mut path = PathBuf::from("{{../directory}}").join("{{cut_start (cut_end this.path 3) 4 }}.html");
+		if path.is_dir() {
+			path.push("index.html");
+		}
+		dbg!(std::env::current_dir());
+		NamedFile::open(path).await.ok()
+	{{/if}}
+}
+{{/each}}
+
+#[launch]
+fn rocket() -> _ {
+	rocket::build()
+	{{#each pages}}	.mount("/", rocket::routes![{{sanitize (file_name this.path)}}])
+		{{/each}}.mount("/", FileServer::from("{{directory}}"))
+		.attach(Template::custom(|engine| {
+			engine.handlebars.register_template_file("page", "{{directory}}");
+		}))
+}

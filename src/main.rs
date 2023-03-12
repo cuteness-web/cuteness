@@ -1,36 +1,35 @@
 #![warn(clippy::all)]
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::Parser as Parse;
 use cuteness::*;
-use handlebars::no_escape;
+use handlebars::{handlebars_helper, no_escape};
 use hashbrown::HashMap;
+use lazy_static::lazy_static;
 use pulldown_cmark::{html, Options, Parser};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use toml::Value;
+use walkdir::WalkDir;
 use yaml_front_matter::YamlFrontMatter;
 
 use std::fs::{self, canonicalize, read_dir, read_to_string, File};
 use std::io::{Read, Write};
-use std::path::{Path, PathBuf};
-
-#[cfg(feature = "sass")]
-use std::process::Command;
+use std::path::Path;
 
 #[derive(Parse)]
 struct Args {
-    /// Update the software
+	/// Update the software
     #[command(subcommand)]
     command: Option<SCommand>,
 }
 
-#[derive(clap::Subcommand)]
 #[allow(clippy::almost_swapped)]
+#[derive(clap::Subcommand)] //~ ERROR this looks like you are trying to swap `__clap_subcommand` and `clap::Subcommand` 
 enum SCommand {
-    /// Builds your `src` directory into `www`
+	/// Builds your `src` directory into `www`
     Build {
-        /// Connection port
+		/// Connection port
         #[arg(long, default_value = "8080")]
         port: u16,
         /// Output directory
@@ -80,13 +79,15 @@ struct PageConfig {
     title: String,
     pageconf: Option<HashMap<String, Value>>,
     additional_css: Option<Vec<String>>,
+    #[serde(default)]
     method: Method,
+    params: Option<Vec<Param>>,
 }
 
 #[derive(Serialize)]
 struct Page {
     config: PageConfig,
-    path: PathBuf,
+    path: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -98,6 +99,12 @@ struct SummaryConfig {
 struct Map {
     title: String,
     url: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct Param {
+    r#type: String,
+    name: String,
 }
 
 fn main() -> Result<()> {
@@ -128,23 +135,79 @@ fn main() -> Result<()> {
 }
 
 fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
-    // * Register all templates ==================
+    // * Register all templates and helpers ======
+
+    dbg!(CONFIG_PATH.display());
 
     let mut reg = handlebars::Handlebars::new();
     reg.register_escape_fn(no_escape);
     reg.register_template_file(
-        "routing_template",
-        CONFIG_PATH.join("templates/routing.hbs"),
+        "page_template",
+        CONFIG_PATH.join("templates").join("page.html.hbs"),
     )
-    .context("Couldn't register `routing.hbs`")?;
-    reg.register_template_file("page_template", CONFIG_PATH.join("templates/page.hbs"))
-        .context("Couldn't register page.hbs")?;
-
+    .context("Couldn't register page.html.hbs")?;
     reg.register_template_file(
         "rocket_routing_template",
-        CONFIG_PATH.join("templates/routing/src/main.rs.hbs"),
+        CONFIG_PATH
+            .join("templates")
+            .join("routing")
+            .join("src")
+            .join("main.rs.hbs"),
     )
-    .context("Couldn't register `routing/src/routing.hbs`")?;
+    .context("Couldn't register `templates/routing/src/main.rs.hbs`")?;
+
+    reg.register_template_file(
+        "rocket_toml",
+        CONFIG_PATH
+            .join("templates")
+            .join("routing")
+            .join("Rocket.toml.hbs"),
+    )
+    .context("Couldn't register Rocket.toml.hbs")?;
+
+    handlebars_helper!(lower: |method: String| method.to_lowercase());
+    reg.register_helper("lower", Box::new(lower));
+
+    handlebars_helper!(file_name: |path: String| {
+        let name = Path::new(&path).file_name().unwrap().to_str().unwrap();
+        &name[..name.len() - 3]
+    });
+
+    reg.register_helper("file_name", Box::new(file_name));
+
+    handlebars_helper!(sanitize: |path: String| {
+
+        lazy_static!{
+            static ref RE: regex::Regex = regex::Regex::new("([<>])").unwrap();
+        };
+
+        RE.replace_all(&path, "_").to_string()
+    });
+    reg.register_helper("sanitize", Box::new(sanitize));
+
+    handlebars_helper!(contains: |src: String, search: String| { src.contains(&search)});
+    reg.register_helper("contains", Box::new(contains));
+
+    handlebars_helper!(is_pure: |src: String| {
+        lazy_static!{
+            static ref RE: regex::Regex = regex::Regex::new("([<>])").unwrap();
+        };
+
+        !RE.is_match(&src)
+    });
+    reg.register_helper("is_pure", Box::new(is_pure));
+
+    handlebars_helper!(cut_end: |src: String, to_cut: usize| {
+        &src[..src.len() - to_cut]
+    });
+
+    reg.register_helper("cut_end", Box::new(cut_end));
+
+    handlebars_helper!(cut_start: |src: String, to_cut: usize| {
+        &src[to_cut..]
+    });
+
+    reg.register_helper("cut_start", Box::new(cut_start));
 
     // ===========================================
 
@@ -174,32 +237,54 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
             .with_context(|| format!("Couldn't create directory {}", outdir.display()))?;
     };
 
-    let mut f = File::create(outdir.join("routing.go")).with_context(|| {
-        format!(
-            "Couldn't create | open file {}",
-            outdir.join("routing.go").display()
-        )
-    })?;
+    // ===========================================
 
+    // * Create Cargo project
 
-    f.write_all(
-        reg.render(
-            "routing_template",
-            &json!({
-    			"port": port,
-    			"directory": canonicalize(outdir).context("Couldn't canonicalize output directory")?.join("static"),
-    			"init_behaviour": config.routing.init_behaviour,
-    			"fail_behaviour": config.routing.fail_behaviour,
-    			"imports": config.routing.imports.join("\n\t")
-    		}),
+    let binding = outdir.join("routing");
+    let cargo_project = Path::new(&binding);
+
+    {
+        let routing_path = Path::new(&outdir).join("routing");
+        if !routing_path.exists() {
+            fs::create_dir(&routing_path).context("Couldn't create directory `routing`")?;
+        };
+        if !routing_path.join("src").exists() {
+            fs::create_dir(routing_path.join("src"))
+                .context("Couldn't create directory `routing/src`")?;
+        };
+    };
+
+    {
+        let mut f = File::create(cargo_project.join("Cargo.toml")).with_context(|| {
+            format!(
+                "Couldn't create | open file {}/Cargo.toml",
+                outdir.display()
+            )
+        })?;
+
+        f.write_all(
+            fs::read_to_string(
+                CONFIG_PATH
+                    .join("templates")
+                    .join("routing")
+                    .join("Cargo.toml"),
+            )
+            .unwrap_or_else(|e| {
+                panic!(
+                    "Couldn't open file `{}`/templates/routing/Cargo.toml: {e}",
+                    CONFIG_PATH.display()
+                )
+            })
+            .as_bytes(),
         )
-        .context("Couldn't render `routing.go`")?
-        .as_bytes(),
-    )
-    .with_context(|| {
+        .context("Couldn't write to routing file")?;
+    }
+
+    let mut f = File::create(cargo_project.join("src").join("main.rs")).with_context(|| {
         format!(
-            "Couldn't create | open file {}",
-            outdir.with_file_name("routing.go").display()
+            "Couldn't create | open file {}/src/main.rs",
+            outdir.display()
         )
     })?;
 
@@ -234,14 +319,12 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
         })?;
     }
 
-    let paths = fs::read_dir("src").context("Couldn't read directory `src`")?;
+    // let paths = fs::read_dir("src").context("Couldn't read directory `src`")?;
 
-	// let mut pages = Vec::new();
+    let mut pages = Vec::new();
 
-    for path in paths {
+    for path in WalkDir::new("src").into_iter().filter_map(|e| e.ok()) {
         // * Convert Markdown file to HTML =========
-
-        let path = path.context("Couldn't process path in input directory")?;
 
         if !path.file_name().to_string_lossy().ends_with(".md") {
             continue;
@@ -295,9 +378,9 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
             reg.render(
                 "page_template",
                 &json!({
-                    "content": html_output,
-                    "sidebar": summary,
-                    "page": &parsed_markdown.metadata,
+                "content": html_output,
+                "sidebar": summary,
+                "page": &parsed_markdown.metadata,
                     "misc": &config.misc
                 }),
             )
@@ -315,11 +398,63 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
             ),
         )?;
         // =======================================
-		// pages.push(Page {
-		// 	config: parsed_markdown.metadata,
-		// 	path: path.path()
-		// })
+
+        // Throw an error if an unknown property is found
+        {
+            let params_in_page = params_in_path(path.path());
+            if let Some(params) = &parsed_markdown.metadata.params {
+                for param in params {
+                    if !params_in_page.contains(&param.name) {
+                        bail!("Parameter not defined: `{}`", param.name);
+                    };
+                }
+            }
+        }
+
+        pages.push(Page {
+            config: parsed_markdown.metadata,
+            path: path.path().to_string_lossy().to_string(),
+        });
     }
+
+    f.write_if_different(
+		reg.render(
+			"rocket_routing_template",
+			&json!({
+				"port": port,
+				"directory": canonicalize(outdir).context("Couldn't canonicalize output directory")?.join("static"),
+				"routing": config.routing,
+				"pages": pages,
+				"config_path": CONFIG_PATH.to_string_lossy()
+			}),
+		).context("Couldn't render `src/main.rs`")?
+		.as_bytes(),
+		cargo_project.join("src").join("main.rs"))
+	.with_context(|| {
+		format!(
+			"Couldn't create | open file {}",
+			cargo_project.join("src").with_file_name("main.rs").display()
+		)
+	})?;
+
+    let mut f = File::create(cargo_project.join("Rocket.toml")).with_context(|| {
+        format!(
+            "Couldn't create | open file {}",
+            cargo_project.join("Rocket.toml").display()
+        )
+    })?;
+
+    f.write_if_different(
+        reg.render(
+            "rocket_toml",
+            &json!({
+				"config_path": CONFIG_PATH.to_string_lossy()
+			}),
+        )
+        .context("Couldn't render Rocket.toml template (id: `rocket_toml`)")?
+        .as_bytes(),
+        cargo_project.join("Rocket.toml"),
+    )?;
 
     // ===========================================
 
@@ -373,69 +508,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
 
     // ===========================================
 
-    // println!("{}", 
-	// reg.render(
-	// 	"rocket_routing_template",
-	// 	&json!({
-	// 		"port": port,
-	// 		"directory": canonicalize(outdir).context("Couldn't canonicalize output directory")?.join("static"),
-	// 		"routing": config.routing,
-	// 		"pages": pages
-	// 	}),
-	// ).context("Couldn't render `routing.go`")?);
-
     Ok(())
-}
-
-/// As the feature "sass" is enabled, we're going to let Sass take care of the job.
-#[cfg(feature = "sass")]
-#[cold]
-#[inline(never)]
-fn compile_styles(outdir: &str, sass_bin: &str) -> Result<()> {
-    // Compile custom styles
-    Command::new(sass_bin)
-        .arg(format!("src/styles:{}", &outdir))
-        .status()?;
-    Ok(())
-}
-
-/// As the feature "sass" isn't activated, all `.sass` (actually, all not `.css`) files are ignored. `*.css` files are copied to the output directory `styles` subdirectory.
-#[cfg(not(feature = "sass"))]
-#[cold]
-#[inline(never)]
-fn compile_styles(indir: &str, outdir: &str) {
-    // Just move the files to the new directory
-    let paths = fs::read_dir("src/styles").context("Couldn't open directory `src/styles`")?;
-
-    for path in paths {
-        let path = path.context("Couldn't process a path in directory")?;
-        if !Path::new(&outdir).exists() {
-            fs::create_dir(&outdir)
-                .with_context(|| format!("Couldn't create directory {}", &outdir));
-        }
-
-        let mut f = File::create(format!(
-            "{}/{}",
-            &outdir,
-            &path.file_name().to_string_lossy()
-        ))
-        .with_context(|| {
-            format!(
-                "Couldn't open file `{}/{}`: {e}",
-                &outdir,
-                &path.file_name().to_string_lossy()
-            )
-        })?;
-
-        if path.file_name().to_string_lossy().ends_with(".css") {
-            f.write_if_different(
-                fs::read_to_string(path.path())
-                    .context("Couldn't read path")?
-                    .as_bytes(),
-                format!("{}/static", &path.path().to_string_lossy()),
-            )
-        }
-    }
 }
 
 /// Write to file ONLY if the contents are different
