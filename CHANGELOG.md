@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - 2023-03-12
+
+### Bug Fixes
+
+-  Remove warning messages
+ 
+
+### Features
+
+-  Replace `Go` web-server with [Rocket](https://rocket.rs) [(desc. at `0807937`)](https://github.com/blyxyas/cuteness/commit/0807937c0d47ee88dea819a55ed9b67efb51dc59)
+ 
+
+### Miscellaneous Tasks
+
+-  Update changelog
+ 
+-  Create boilerplate for migrating from Go to a Rocket webserver
+ 
+
 ## [0.7.4] - 2023-03-05
 
 ### Bug Fixes
