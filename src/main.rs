@@ -24,7 +24,6 @@ struct Args {
     command: Option<SCommand>,
 }
 
-#[allow(clippy::almost_swapped)]
 #[derive(clap::Subcommand)] //~ ERROR this looks like you are trying to swap `__clap_subcommand` and `clap::Subcommand` 
 enum SCommand {
 	/// Builds your `src` directory into `www`
@@ -54,16 +53,8 @@ enum SCommand {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Config {
-    routing: RoutingConfig,
     config: HashMap<String, Value>,
     misc: MiscConfig,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct RoutingConfig {
-    init_behaviour: String,
-    fail_behaviour: String,
-    imports: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -224,11 +215,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
     f.read_to_string(&mut content)
         .context("Couldn't read configuration `cuteconfig.toml`")?;
 
-    let mut config = toml::from_str::<Config>(&content).context("Couldn't parse configuration")?;
-
-    for i in 0..config.routing.imports.len() {
-        config.routing.imports[i] = format!("\"{}\"", config.routing.imports[i]);
-    }
+    let config = toml::from_str::<Config>(&content).context("Couldn't parse configuration")?;
 
     // * Create output directory ======================
 
@@ -423,7 +410,6 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
 			&json!({
 				"port": port,
 				"directory": canonicalize(outdir).context("Couldn't canonicalize output directory")?.join("static"),
-				"routing": config.routing,
 				"pages": pages,
 				"config_path": CONFIG_PATH.to_string_lossy()
 			}),

@@ -2,10 +2,9 @@
 
 <!-- cargo-rdme start -->
 
-***Cuteness*** is a static site generator. It generates a simple [Go](https://go.dev/) web-server and builds the Markdown[^4] source files. It was created to offer extreme configuration, and that's mainly what we're going to talk about here.
+***Cuteness*** is a static site generator. It generates a [Rocket](https://rocket.rs) web-server and builds the Markdown[^4] source files. It was created to offer extreme configuration, and that's mainly what we're going to talk about here.
 
 * [`cuteconfig.toml`](#cuteconfig)
-    * [`[routing]`](#config.routing)
     * [`[misc]`](#config.misc)
     * [`[config]`](#config.config)
 * [The front-matter](#frontmatter)
@@ -37,11 +36,6 @@
 
 ```toml
 # cuteconfig.default.toml
-[routing]
-init_behaviour = "fmt.Printf(\"Starting webserver at port 8080\")"
-fail_behaviour = "log.Fatal(err)"
-imports = ["fmt", "log"]
-
 [misc]
 latex = true # Add KaTeX support
 html_lang = "en" # HTML Language
@@ -50,15 +44,6 @@ syntax_highlighting = true
 [config]
 # Write here your custom templates!
 ```
-
-### `[routing]` <a name="config.routing"></a>
-
-This section handles code related to the generation of the Go web-server.
-The web-server Handlebars template can be found [here](https://github.com/blyxyas/cuteness/blob/main/templates/routing.hbs)
-
-* `init_behaviour`: This code will run when the server is started.
-* `fail_behaviour`: This code will run if the server encounters an error.
-* `imports`: A list of modules to import for your custom code in `init_behaviour` and `fail_behaviour`.
 
 ### `[misc]` <a name="config.misc"></a>
 
@@ -241,7 +226,7 @@ When creating a new file, you'll have to start the file writing a [front-matter]
 * `SUMMARY.toml` in the root directory with [default contents](https://github.com/blyxyas/cuteness/blob/main/SUMMARY.default.toml).
 * `cuteconfig.toml` in the root directory with [default contents](https://github.com/blyxyas/cuteness/blob/main/cuteconfig.default.toml).
 
-You can start by writing on `introduction.md`, then executing `cuteness build`, executing `go run www/routing.go` and going to *http://localhost:8080/introduction*
+You can start by writing on `introduction.md`, then executing `cuteness build`, executing `cargo run --manifest-path <output directory, default: www>/routing/Cargo.toml` and going to *http://localhost:8080/introduction*
 
 ## `build` <a name="subcommands.build"></a>
 
@@ -287,43 +272,7 @@ Almost the same, just locate your `.css` files at `src/styles` and they will not
 
 # Routing <a name="routing"></a>
 
-When using `cuteness build`, an output directory containing some static files and a simple web-server will be generated.
-
-An example of this webserver would be something like this:
-
-```go
-package main
-
-import (
-    "fmt"
-    "log"
-    "net/http"
-    "strings"
-)
-
-func main() {
-    fmt.Printf("Starting webserver at port 8080")
-    fs := http.FileServer(http.Dir("/home/alejandra/git/wawat/test/www/static"))
-    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        if r.URL.Path != "/" && !strings.Contains(r.URL.Path, ".") {
-            r.URL.Path += ".html"
-        }
-        fs.ServeHTTP(w, r)
-    })
-
-    if err := http.ListenAndServe(":8080", nil); err != nil {
-        log.Fatal(err)
-    }
-}
-```
-
-Note that **you need Go installed to run it[^5]**. The way to run it would be using:
-
-```bash
-go run www/routing.go
-```
-
-This will create a local web-server which you can access by going to *http://localhost:8080/*
+When using `cuteness build`, an output directory containing some static files and a simple web-server will be generated which you can access by going to *http://localhost:8080/*
 
 As the project is still in development, efforts about using actual servers available on the internet are still very far from being started.
 
