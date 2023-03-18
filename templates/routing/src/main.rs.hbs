@@ -1,6 +1,6 @@
 #![allow(dead_code, non_camel_case_types)]
 #![feature(decl_macro)]
-use rocket::{Rocket, get, post, launch, catch, Request, fs::{NamedFile, FileServer} };
+use rocket::{Rocket, get, post, launch, catch, Request, fs::{NamedFile, FileServer}, catchers };
 use rocket_dyn_templates::{Template, context};
 use std::path::PathBuf;
 
@@ -28,6 +28,11 @@ pub async fn {{sanitize (file_name this.path)}}({{#each this.config.params}}{{th
 }
 {{/each}}
 
+#[catch(404)]
+async fn not_found() -> NamedFile {
+	NamedFile::open("{{../directory}}/404.html").await.expect("Couldn't send 404 page")
+}
+
 #[launch]
 fn rocket() -> _ {
 	rocket::build()
@@ -36,4 +41,5 @@ fn rocket() -> _ {
 		.attach(Template::custom(|engine| {
 			engine.handlebars.register_template_file("page", "{{directory}}");
 		}))
+		.register("/", catchers![not_found])
 }

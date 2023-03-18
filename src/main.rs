@@ -392,7 +392,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
             if let Some(params) = &parsed_markdown.metadata.params {
                 for param in params {
                     if !params_in_page.contains(&param.name) {
-                        bail!("Parameter not defined: `{}`", param.name);
+                        bail!("Unknown parameter: `{}`", param.name);
                     };
                 }
             }
@@ -441,6 +441,10 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
         .as_bytes(),
         cargo_project.join("Rocket.toml"),
     )?;
+
+	// Copy 404 page.
+
+	fs::copy(CONFIG_PATH.join("templates").join("404.html"), outdir.join("static").join("404.html")).context("Couldn't copy 404 page (templates/404.html)")?;
 
     // ===========================================
 
