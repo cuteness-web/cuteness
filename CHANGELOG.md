@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.2] - 2023-03-18
+
+### Bug Fixes
+
+-  Add 404 page
+ 
+
+## [0.8.1] - 2023-03-13
+
+### Bug Fixes
+
+-  Update documentation to `0.8.x`
+ 
+
+### Miscellaneous Tasks
+
+-  Update changelog
+ 
+
 ## [0.8.0] - 2023-03-12
 
 ### Bug Fixes
