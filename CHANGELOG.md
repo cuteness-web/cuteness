@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [unreleased]
+
+### Documentation
+
+-  Add `SUMMARY.toml` section to docs.
+ 
+
+### Miscellaneous Tasks
+
+-  Update changelog
+ 
+-  Bump version to `0.8.3`
+ 
+
 ## [0.8.2] - 2023-03-18
 
 ### Bug Fixes
