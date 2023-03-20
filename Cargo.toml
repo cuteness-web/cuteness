@@ -3,7 +3,6 @@ name = "cuteness"
 version = "0.8.3"
 edition = "2021"
 
-
 [profile.release]
 strip = true
 opt-level = "z"
@@ -27,7 +26,6 @@ serde_json = "1.0.93"
 toml = "0.7.2"
 walkdir = "2.3.2"
 yaml-front-matter = "0.1.0"
-
 
 # FIXME: Change this to a configuration option
 [features]

@@ -13,22 +13,25 @@ use toml::Value;
 use walkdir::WalkDir;
 use yaml_front_matter::YamlFrontMatter;
 
+#[cfg(feature = "tera")]
+use tera;
+
 use std::fs::{self, canonicalize, read_dir, read_to_string, File};
 use std::io::{Read, Write};
 use std::path::Path;
 
 #[derive(Parse)]
 struct Args {
-	/// Update the software
+    /// Update the software
     #[command(subcommand)]
     command: Option<SCommand>,
 }
 
-#[derive(clap::Subcommand)] //~ ERROR this looks like you are trying to swap `__clap_subcommand` and `clap::Subcommand` 
+#[derive(clap::Subcommand)] //~ ERROR this looks like you are trying to swap `__clap_subcommand` and `clap::Subcommand`
 enum SCommand {
-	/// Builds your `src` directory into `www`
+    /// Builds your `src` directory into `www`
     Build {
-		/// Connection port
+        /// Connection port
         #[arg(long, default_value = "8080")]
         port: u16,
         /// Output directory
@@ -310,7 +313,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
 
     let mut pages = Vec::new();
 
-    for path in WalkDir::new("src").into_iter().filter_map(|e| e.ok()) {
+	for path in WalkDir::new("src").into_iter().filter_map(|e| e.ok()) {
         // * Convert Markdown file to HTML =========
 
         if !path.file_name().to_string_lossy().ends_with(".md") {
@@ -434,17 +437,21 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
         reg.render(
             "rocket_toml",
             &json!({
-				"config_path": CONFIG_PATH.to_string_lossy()
-			}),
+                "config_path": CONFIG_PATH.to_string_lossy()
+            }),
         )
         .context("Couldn't render Rocket.toml template (id: `rocket_toml`)")?
         .as_bytes(),
         cargo_project.join("Rocket.toml"),
     )?;
 
-	// Copy 404 page.
+    // Copy 404 page.
 
-	fs::copy(CONFIG_PATH.join("templates").join("404.html"), outdir.join("static").join("404.html")).context("Couldn't copy 404 page (templates/404.html)")?;
+    fs::copy(
+        CONFIG_PATH.join("templates").join("404.html"),
+        outdir.join("static").join("404.html"),
+    )
+    .context("Couldn't copy 404 page (templates/404.html)")?;
 
     // ===========================================
 

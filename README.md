@@ -245,7 +245,7 @@ title = "Chapter 2: ..."
 
 * `title`: Page's title, this will be used for things such as the [`<title>`](https://developer.mozilla.org/docs/Web/HTML/Element/title) tag in the HTML's head or the sidebar.
 
-* `url`: URL to the page, i. e. if the source page is at "<root>/src/my_file.md", write "my_file".
+* `url`: URL to the page, i. e. if the source page is at "\<root\>/src/my_file.md", write "my_file".
 
 ([Up-to-date version here](https://github.com/blyxyas/cuteness/blob/main/SUMMARY.default.toml))
 
@@ -324,6 +324,10 @@ The files content are preprocessed before being written, these preprocessors are
 [^5]: There are some ideas about porting the generated web-server to Rust. As the project isn't v1.0 yet, this may change in the future.
 
 <!-- cargo-rdme end -->
+
+## Features
+
+Feature documentation can be found on a rendered `rustdoc` page. This can be accessed through [`cargo doc`](https://doc.rust-lang.org/cargo/commands/cargo-doc.html).
 
 ## License
 
