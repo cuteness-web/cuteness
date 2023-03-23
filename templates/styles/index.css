@@ -65,4 +65,8 @@ h1, h2, h3, h4, h5, h6 {
   padding-right: 10vw;
 }
 
+code {
+  font-family: "Courier New", Courier, monospace;
+}
+
 /*# sourceMappingURL=index.css.map */
