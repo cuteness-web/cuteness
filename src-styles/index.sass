@@ -1,7 +1,28 @@
 // Use `sass styles:templates/styles` to build
 
+$media-desktop: "only screen and (max-width : 1024px)"
+$media-tablet: "only screen and (max-width : 768px)"
+$media-mobile: "only screen and (max-width : 600px)"
+$media-mobile-sm: "only screen and (max-width : 480px)"
+
 p
 	font-family: 'Tilt Neon', cursive
+
+@media #{$media-desktop}
+	p
+		font-size: 20px
+
+@media #{$media-tablet}
+	p
+		font-size: 19px
+
+@media #{$media-mobile}
+	p
+		font-size: 16px
+
+@media #{$media-mobile-sm}
+	p
+		font-size: 18px
 
 h1, h2, h3, h4, h5, h6
 	font-family: 'Italiana', serif
