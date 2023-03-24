@@ -69,4 +69,9 @@ code {
   font-family: "Courier New", Courier, monospace;
 }
 
+span .katex * {
+  font-family: "Playfair Display", serif;
+  font-size: x-large;
+}
+
 /*# sourceMappingURL=index.css.map */
