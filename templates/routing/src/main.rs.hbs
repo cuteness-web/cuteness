@@ -22,7 +22,6 @@ pub async fn {{sanitize (file_name this.path)}}({{#each this.config.params}}{{th
 		if path.is_dir() {
 			path.push("index.html");
 		}
-		dbg!(std::env::current_dir());
 		NamedFile::open(path).await.ok()
 	{{/if}}
 }

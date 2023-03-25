@@ -331,10 +331,12 @@ use std::{
     process::Command,
 };
 
+use anyhow::{Context, Result};
 use emojis::get_by_shortcode;
 use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 lazy_static! {
     static ref REQUOTE: Regex = Regex::new("\"(.*?)\"").unwrap();
@@ -546,4 +548,58 @@ pub enum Method {
     #[default]
     GET,
     POST,
+}
+
+pub fn parse_admonish(admonish: &str, reg: &handlebars::Handlebars) -> Result<Option<String>> {
+    let split = admonish.split_whitespace().collect::<Vec<&str>>();
+    if !(split[0] == "admonish") {
+        return Ok(None);
+    };
+
+    let kind;
+    let title;
+    if split.len() == 1 {
+        kind = "note";
+    } else {
+        kind = parse_admonishkind(split[1]);
+    }
+
+    if split.len() < 3 {
+        title = String::from("Note")
+    } else {
+        title = split[2..].join(" ");
+    }
+
+    let template = reg.render_template(
+        &std::fs::read_to_string(&format!(
+            "{}/templates/admonish.html.hbs",
+            CONFIG_PATH.display(),
+        ))
+        .with_context(|| {
+            format!("Couldn't read file <CONFIG PATH>/templates/admonish.html.hbs",)
+        })?,
+        &json!({
+            "title": title,
+            "kind": kind
+        }),
+    )?;
+
+    Ok(Some(template))
+}
+
+fn parse_admonishkind(s: &str) -> &str {
+    match s.to_lowercase().as_str() {
+        "info" => s,
+        "warning" => s,
+        "example" => s,
+        "tip" => s,
+        "bug" => s,
+        "tldr" => s,
+        "done" => s,
+        "help" => s,
+        "fail" => s,
+        "danger" => s,
+        "quote" => s,
+        _ => "note",
+    }
 }

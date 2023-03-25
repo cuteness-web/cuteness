@@ -1,4 +1,5 @@
 #![warn(clippy::all)]
+#![feature(let_chains)]
 
 use anyhow::{bail, Context, Result};
 use clap::Parser as Parse;
@@ -6,7 +7,7 @@ use cuteness::*;
 use handlebars::{handlebars_helper, no_escape};
 use hashbrown::HashMap;
 use lazy_static::lazy_static;
-use pulldown_cmark::{html, Options, Parser};
+use pulldown_cmark::{html, CodeBlockKind, Event, Options, Parser, Tag};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use toml::Value;
@@ -130,8 +131,6 @@ fn main() -> Result<()> {
 
 fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
     // * Register all templates and helpers ======
-
-    dbg!(CONFIG_PATH.display());
 
     let mut reg = handlebars::Handlebars::new();
     reg.register_escape_fn(no_escape);
@@ -313,7 +312,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
 
     let mut pages = Vec::new();
 
-	for path in WalkDir::new("src").into_iter().filter_map(|e| e.ok()) {
+    for path in WalkDir::new("src").into_iter().filter_map(|e| e.ok()) {
         // * Convert Markdown file to HTML =========
 
         if !path.file_name().to_string_lossy().ends_with(".md") {
@@ -328,7 +327,33 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
 
         let mut binding = curly_quotes(&parsed_markdown.content).to_string();
         binding = emojis(&binding);
-        let parser = Parser::new_ext(&binding, Options::all());
+        let parser = Parser::new_ext(&binding, Options::all()).map(|event| match event {
+            Event::Start(Tag::CodeBlock(block)) => {
+                // block would be the code type
+                if let CodeBlockKind::Fenced(cowstr) = &block {
+                    if let Ok(Some(admonishment)) =
+                        parse_admonish(&cowstr.clone().into_string(), &reg)
+                    {
+                        Event::Html(pulldown_cmark::CowStr::Boxed(admonishment.into()))
+                    } else {
+                        Event::Start(Tag::CodeBlock(block))
+                    }
+                } else {
+                    Event::Start(Tag::CodeBlock(block))
+                }
+            }
+            Event::End(Tag::CodeBlock(block)) => {
+				if let CodeBlockKind::Fenced(cowstr) = &block {
+                    if &cowstr.clone().into_string()[..8] == "admonish" {
+                        return Event::Html("</p></div>".into());
+                    } else {
+                        return Event::End(Tag::CodeBlock(block))
+                    }
+                }
+                Event::End(Tag::CodeBlock(block))
+            }
+            _ => event,
+        });
 
         let mut html_output = String::new();
         html::push_html(&mut html_output, parser);
