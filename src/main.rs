@@ -344,7 +344,8 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
             }
             Event::End(Tag::CodeBlock(block)) => {
 				if let CodeBlockKind::Fenced(cowstr) = &block {
-                    if &cowstr.clone().into_string()[..8] == "admonish" {
+                    
+					if cowstr.clone().into_string().contains("admonish") {
                         return Event::Html("</p></div>".into());
                     } else {
                         return Event::End(Tag::CodeBlock(block))
