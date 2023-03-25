@@ -4,6 +4,51 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### Miscellaneous Tasks
+
+-  Update changelog
+ 
+
+## [0.9.4] - 2023-03-25
+
+### Bug Fixes
+
+-  Add crates.io and docs.rs badges
+ 
+
+### Miscellaneous Tasks
+
+-  Prepare crate for publishing
+ 
+
+## [0.9.2] - 2023-03-25
+
+### Bug Fixes
+
+-  Fix bug where colorized code wouldn't have the correct font family
+ 
+
+### Miscellaneous Tasks
+
+-  Update changelog
+ 
+-  Update dependencies versions
+ 
+
+## [0.9.1] - 2023-03-25
+
+### Bug Fixes
+
+-  Fix code fragments that aren't admonishments
+ 
+
+### Miscellaneous Tasks
+
+-  Update changelog
+ 
+
+## [0.9.0] - 2023-03-25
+
 ### Bug Fixes
 
 -  Escape `<root>` generic, that rustdoc thought was an HTML tag
@@ -20,12 +65,6 @@ All notable changes to this project will be documented in this file.
  
 -  Use Playfair Display as Math font.
  
--  Fix code fragments that aren't admonishments
- 
--  Fix bug where colorized code wouldn't have the correct font family
- 
--  Add crates.io and docs.rs badges
- 
 
 ### Features
 
@@ -37,14 +76,6 @@ All notable changes to this project will be documented in this file.
 -  Update changelog
  
 -  Update changelog
- 
--  Update changelog
- 
--  Update changelog
- 
--  Update dependencies versions
- 
--  Prepare crate for publishing
  
 
 ## [0.8.3] - 2023-03-19
