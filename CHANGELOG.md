@@ -20,6 +20,10 @@ All notable changes to this project will be documented in this file.
  
 -  Use Playfair Display as Math font.
  
+-  Fix code fragments that aren't admonishments
+ 
+-  Fix bug where colorized code wouldn't have the correct font family
+ 
 
 ### Features
 
@@ -28,6 +32,8 @@ All notable changes to this project will be documented in this file.
 
 ### Miscellaneous Tasks
 
+-  Update changelog
+ 
 -  Update changelog
  
 -  Update changelog
