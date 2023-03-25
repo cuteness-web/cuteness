@@ -24,6 +24,8 @@ All notable changes to this project will be documented in this file.
  
 -  Fix bug where colorized code wouldn't have the correct font family
  
+-  Add crates.io and docs.rs badges
+ 
 
 ### Features
 
@@ -37,6 +39,12 @@ All notable changes to this project will be documented in this file.
 -  Update changelog
  
 -  Update changelog
+ 
+-  Update changelog
+ 
+-  Update dependencies versions
+ 
+-  Prepare crate for publishing
  
 
 ## [0.8.3] - 2023-03-19
