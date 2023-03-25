@@ -1,8 +1,17 @@
-<h1 align="center"><b><i>Cuteness</i></b></h1>
-
 <!-- cargo-rdme start -->
 
-***Cuteness*** is a static site generator. It generates a [Rocket](https://rocket.rs) web-server and builds the Markdown[^4] source files. It was created to offer extreme configuration and an easy configuration API using [TOML](https://toml.io/), and that's mainly what we're going to talk about here.
+<span align=center>
+ 
+# *Cuteness*
+
+[![crates.io](https://img.shields.io/crates/v/cuteness.svg)](https://crates.io/crates/cuteness)
+[![docs.rs](https://img.shields.io/docsrs/cuteness/latest)](https://docs.rs/cuteness)
+
+ </span>
+
+---
+
+ ***Cuteness*** is a static site generator. It generates a [Rocket](https://rocket.rs) web-server and builds the Markdown[^4] source files. It was created to offer extreme configuration and an easy configuration API using [TOML](https://toml.io/), and that's mainly what we're going to talk about here.
 
 * [`cuteconfig.toml`](#cuteconfig)
     * [`[misc]`](#config.misc)
