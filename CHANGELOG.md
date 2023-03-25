@@ -4,8 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [unreleased]
 
+### Bug Fixes
+
+-  Escape `<root>` generic, that rustdoc thought was an HTML tag
+ 
+-  Fix font family for titles other than `<h1>`.
+ 
+-  Create dynamic font sizes for paragraphs.
+ 
+-  Add left and right padding to center content.
+ 
+-  Fix font family on elements other than `<p>` (like `li`)
+ 
+-  Fix font family for inline code fragments.
+ 
+-  Use Playfair Display as Math font.
+ 
+
+### Features
+
+-  Create admonishments (inspired by mdbook-admonish)
+ 
+
 ### Miscellaneous Tasks
 
+-  Update changelog
+ 
 -  Update changelog
  
 
