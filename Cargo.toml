@@ -1,7 +1,13 @@
 [package]
 name = "cuteness"
-version = "0.9.1"
+version = "0.9.3"
 edition = "2021"
+license = "MIT"
+description = "Cute static site (+ server) generator with a bunch of plugins"
+homepage = "https://github.com/blyxyas/cuteness"
+readme = "README.md"
+keywords = ["cuteness", "web", "site", "generator", "codegen"]
+categories = ["web-programming"]
 
 [profile.release]
 strip = true
