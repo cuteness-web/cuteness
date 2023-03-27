@@ -2,11 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [0.9.7] - 2023-03-27
+
+### Bug Fixes
+
+-  Add 'assets' to `package.include`
+ 
+
+### Fix
+
+-  fix logo issue
+ 
 
 ### Miscellaneous Tasks
 
 -  Update changelog
+ 
+-  Update changelog
+ 
+-  Bump version
+ 
+-  Bump version
+ 
+
+### Styling
+
+-  Add logo to README
  
 
 ## [0.9.4] - 2023-03-25
