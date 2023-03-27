@@ -15,7 +15,8 @@ include = [
 	"src/*",
 	"cuteconfig.default.toml",
 	"SUMMARY.default.toml",
-	"introduction.default.md"
+	"introduction.default.md",
+	"assets/*"
 ]
 
 [profile.release]
