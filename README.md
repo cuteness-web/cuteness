@@ -2,7 +2,7 @@
 
 <span align=center>
  
-# *Cuteness*
+![Cuteness logo](assets/logo.svg)
 
 [![crates.io](https://img.shields.io/crates/v/cuteness.svg)](https://crates.io/crates/cuteness)
 [![docs.rs](https://img.shields.io/docsrs/cuteness/latest)](https://docs.rs/cuteness)
