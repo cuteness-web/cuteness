@@ -1,8 +1,8 @@
 [package]
 name = "cuteness"
-version = "0.9.7"
+version = "0.9.8"
 edition = "2021"
-license = "MIT"
+license = "GPL-3.0"
 description = "Cute static site (+ server) generator with a bunch of plugins"
 homepage = "https://github.com/blyxyas/cuteness"
 readme = "README.md"
