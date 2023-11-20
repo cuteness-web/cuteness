@@ -45,12 +45,12 @@
 //! ```toml
 //! # cuteconfig.default.toml
 //! [misc]
-//! latex = true # Add KaTeX support
-//! html_lang = "en" # HTML Language
+//! latex = true # Should cuteness build with KaTeX support?
+//! html_lang = "en" # What language should HTML use?
 //! syntax_highlighting = true
 //!
 //! [config]
-//! # Write here your custom templates!
+//! # Put any custom templates here :D
 //! ```
 //!
 //! ### `[misc]` <a name="config.misc"></a>
