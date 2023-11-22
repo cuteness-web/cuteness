@@ -9,4 +9,4 @@ html_lang = "en" # HTML Language
 syntax_highlighting = true
 
 [config]
-# Write here your custom templates!
+# Add any custom templates here!
