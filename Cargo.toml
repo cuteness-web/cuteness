@@ -1,6 +1,6 @@
 [package]
 name = "cuteness"
-version = "0.9.8"
+version = "0.9.9"
 edition = "2021"
 license = "GPL-3.0"
 description = "Cute static site (+ server) generator with a bunch of plugins"
@@ -37,8 +37,8 @@ home = "0.5.4"
 lazy_static = "1.4.0"
 pulldown-cmark = { version = "0.9.2" }
 regex = "1.7.3"
-serde = { version = "1.0.158", features = ["derive"] }
-serde_json = "1.0.94"
+serde = { version = "1.0.193", features = ["derive"] }
+serde_json = "1.0.108"
 toml = "0.7.3"
 walkdir = "2.3.3"
 yaml-front-matter = "0.1.0"
