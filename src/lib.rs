@@ -489,16 +489,16 @@ pub fn init() {
 
     std::fs::write(
         "cuteconfig.toml",
-        include_bytes!("../cuteconfig.default.toml"),
+        include_bytes!("../defaults/cuteconfig.toml"),
     )
     .unwrap_or_else(|e| panic!("Couldn't create `cuteconfig.toml`: {e}"));
 
-    std::fs::write("SUMMARY.toml", include_bytes!("../SUMMARY.default.toml"))
+    std::fs::write("SUMMARY.toml", include_bytes!("../defaults/SUMMARY.toml"))
         .unwrap_or_else(|e| panic!("Couldn't create `SUMMARY.md`: {e}"));
 
     std::fs::write(
         "src/introduction.md",
-        include_bytes!("../introduction.default.md"),
+        include_bytes!("../defaults/introduction.md"),
     )
     .unwrap_or_else(|e| panic!("Couldn't create `src/introduction.md`: {e}"));
 }
