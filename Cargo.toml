@@ -13,10 +13,12 @@ include = [
 	"Cargo.lock",
 	"README.md",
 	"src/*",
-	"cuteconfig.default.toml",
-	"SUMMARY.default.toml",
-	"introduction.default.md",
+  "defaults/*",
 	"assets/*"
+]
+
+exclude = [
+  ".idea/*"
 ]
 
 [profile.release]

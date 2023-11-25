@@ -11,6 +11,7 @@ static
 www/
 testing/
 .vscode/
+.idea/
 
 templates/routing/target
 templates/routing/Cargo.lock

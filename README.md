@@ -42,10 +42,10 @@
 ## `cuteconfig.toml` <a name="cuteconfig"></a>
 
 
-`cuteconfig.toml` is the file used to store configuration settings. It's default configuration in the current version is: ([latest version](https://github.com/blyxyas/cuteness/blob/main/cuteconfig.default.toml))
+`cuteconfig.toml` is the file used to store configuration settings. It's default configuration in the current version is: ([latest version](https://github.com/blyxyas/cuteness/blob/main/defaults/cuteconfig.toml))
 
 ```toml
-# cuteconfig.default.toml
+# cuteconfig.toml
 [misc]
 latex = true # Add KaTeX support
 html_lang = "en" # HTML Language

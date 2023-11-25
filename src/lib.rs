@@ -1,14 +1,14 @@
 //! <span align=center>
 //!  
 //! ![Cuteness logo](https://raw.githubusercontent.com/blyxyas/cuteness/main/assets/logo.svg)
-//! 
+//!
 //! [![crates.io](https://img.shields.io/crates/v/cuteness.svg)](https://crates.io/crates/cuteness)
 //! [![docs.rs](https://img.shields.io/docsrs/cuteness/latest)](https://docs.rs/cuteness)
 //!
 //!  </span>
-//! 
+//!
 //! ---
-//! 
+//!
 //!  ***Cuteness*** is a static site generator. It generates a [Rocket](https://rocket.rs) web-server and builds the Markdown[^4] source files. It was created to offer extreme configuration and an easy configuration API using [TOML](https://toml.io/), and that's mainly what we're going to talk about here.
 //!
 //! * [`cuteconfig.toml`](#cuteconfig)
@@ -325,7 +325,7 @@
 //!
 //! The files content are preprocessed before being written, these preprocessors are used to change \"straight quotes\" to “curly quotes”, or to change emojicodes "`:cat:`" to actual emojis 🐱. These preprocessors are applied automatically and should not cause any problems.
 //!
-#![doc = ::document_features::document_features!()]
+#![doc = document_features::document_features!()]
 //! [^1]: The tool specifically uses [KaTeX](https://katex.org/), specialized on equations.
 //!
 //! [^3]: `Handlebars-rs` uses the [Handlebars templating language](https://handlebarsjs.com/)
@@ -432,16 +432,16 @@ pub fn setup() {
             .join("sparse-checkout"),
         "templates/*",
     )
-    .unwrap_or_else(|e| {
-        panic!(
-            "Couldn't write to {}: {e}",
-            CONFIG_PATH
-                .join(".git")
-                .join("info")
-                .join("sparse-checkout")
-                .display()
-        )
-    });
+        .unwrap_or_else(|e| {
+            panic!(
+                "Couldn't write to {}: {e}",
+                CONFIG_PATH
+                    .join(".git")
+                    .join("info")
+                    .join("sparse-checkout")
+                    .display()
+            )
+        });
 
     Command::new("echo")
         .current_dir(CONFIG_PATH.as_path())
@@ -489,25 +489,25 @@ pub fn init() {
 
     std::fs::write(
         "cuteconfig.toml",
-        include_bytes!("../cuteconfig.default.toml"),
+        include_bytes!("../defaults/cuteconfig.toml"),
     )
-    .unwrap_or_else(|e| panic!("Couldn't create `cuteconfig.toml`: {e}"));
+        .unwrap_or_else(|e| panic!("Couldn't create `cuteconfig.toml`: {e}"));
 
-    std::fs::write("SUMMARY.toml", include_bytes!("../SUMMARY.default.toml"))
+    std::fs::write("SUMMARY.toml", include_bytes!("../defaults/SUMMARY.toml"))
         .unwrap_or_else(|e| panic!("Couldn't create `SUMMARY.md`: {e}"));
 
     std::fs::write(
         "src/introduction.md",
-        include_bytes!("../introduction.default.md"),
+        include_bytes!("../defaults/introduction.md"),
     )
-    .unwrap_or_else(|e| panic!("Couldn't create `src/introduction.md`: {e}"));
+        .unwrap_or_else(|e| panic!("Couldn't create `src/introduction.md`: {e}"));
 }
 
 /// As the feature "sass" is enabled, we're going to let Sass take care of the job.
 #[cfg(feature = "sass")]
 #[cold]
 #[inline(never)]
-pub fn compile_styles(outdir: &str, sass_bin: &str) -> anyhow::Result<()> {
+pub fn compile_styles(outdir: &str, sass_bin: &str) -> Result<()> {
     // Compile custom styles
     Command::new(sass_bin)
         .arg(format!("src/styles:{}", &outdir))
@@ -535,13 +535,13 @@ pub fn compile_styles(indir: &str, outdir: &str) {
             &outdir,
             &path.file_name().to_string_lossy()
         ))
-        .with_context(|| {
-            format!(
-                "Couldn't open file `{}/{}`: {e}",
-                &outdir,
-                &path.file_name().to_string_lossy()
-            )
-        })?;
+            .with_context(|| {
+                format!(
+                    "Couldn't open file `{}/{}`: {e}",
+                    &outdir,
+                    &path.file_name().to_string_lossy()
+                )
+            })?;
 
         if path.file_name().to_string_lossy().ends_with(".css") {
             f.write_if_different(
@@ -563,12 +563,13 @@ pub enum Method {
 
 pub fn parse_admonish(admonish: &str, reg: &handlebars::Handlebars) -> Result<Option<String>> {
     let split = admonish.split_whitespace().collect::<Vec<&str>>();
-    if !(split[0] == "admonish") {
+    if split[0] != "admonish" {
         return Ok(None);
     };
 
     let kind;
     let title;
+
     if split.len() == 1 {
         kind = "note";
     } else {
@@ -586,9 +587,9 @@ pub fn parse_admonish(admonish: &str, reg: &handlebars::Handlebars) -> Result<Op
             "{}/templates/admonish.html.hbs",
             CONFIG_PATH.display(),
         ))
-        .with_context(|| {
-            format!("Couldn't read file <CONFIG PATH>/templates/admonish.html.hbs",)
-        })?,
+            .with_context(|| {
+                format!("Couldn't read file <CONFIG PATH>/templates/admonish.html.hbs", )
+            })?,
         &json!({
             "title": title,
             "kind": kind

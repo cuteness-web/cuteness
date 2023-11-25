@@ -17,7 +17,7 @@ use yaml_front_matter::YamlFrontMatter;
 #[cfg(feature = "tera")]
 use tera;
 
-use std::fs::{self, canonicalize, read_dir, read_to_string, File};
+use std::fs::{self, read_dir, read_to_string, File};
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -253,7 +253,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
         })?;
 
         f.write_all(
-            fs::read_to_string(
+            read_to_string(
                 CONFIG_PATH
                     .join("templates")
                     .join("routing")
@@ -300,7 +300,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
     }
 
     if !Path::new(&outdir.join("static")).exists() {
-        fs::create_dir(&outdir.join("static")).with_context(|| {
+        fs::create_dir(outdir.join("static")).with_context(|| {
             format!(
                 "Couldn't create directory `{}`",
                 outdir.join("static").display()
@@ -319,7 +319,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
             continue;
         };
 
-        let content = fs::read_to_string(path.path())
+        let content = read_to_string(path.path())
             .context("Can't get path of file in the input directory")?;
 
         let parsed_markdown = YamlFrontMatter::parse::<PageConfig>(&content)
@@ -344,11 +344,10 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
             }
             Event::End(Tag::CodeBlock(block)) => {
 				if let CodeBlockKind::Fenced(cowstr) = &block {
-                    
-					if cowstr.clone().into_string().contains("admonish") {
-                        return Event::Html("</p></div>".into());
+                    return if cowstr.clone().into_string().contains("admonish") {
+                        Event::Html("</p></div>".into())
                     } else {
-                        return Event::End(Tag::CodeBlock(block))
+                        Event::End(Tag::CodeBlock(block))
                     }
                 }
                 Event::End(Tag::CodeBlock(block))
@@ -438,7 +437,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
 			"rocket_routing_template",
 			&json!({
 				"port": port,
-				"directory": canonicalize(outdir).context("Couldn't canonicalize output directory")?.join("static"),
+				"directory": std::fs::canonicalize(outdir).context("Couldn't canonicalize output directory")?.join("static"),
 				"pages": pages,
 				"config_path": CONFIG_PATH.to_string_lossy()
 			}),
@@ -492,7 +491,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
     }
 
     if !Path::new(&format!("{}/static/styles", outdir.display())).exists() {
-        fs::create_dir(&format!("{}/static/styles", outdir.display())).with_context(|| {
+        fs::create_dir(format!("{}/static/styles", outdir.display())).with_context(|| {
             format!(
                 "Couldn't create directory `{}/static/styles`",
                 outdir.display()
@@ -511,7 +510,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
         })?
         .filter_map(|e| e.ok())
     {
-        std::fs::copy(
+        fs::copy(
             file.path(),
             format!(
                 "{}/static/styles/{}",
@@ -550,7 +549,7 @@ where
         if !(path.as_ref().exists()
             && blake3::hash(buf)
                 == blake3::hash(
-                    fs::read_to_string(path)
+                    read_to_string(path)
                         .context("Couldn't read path")?
                         .as_bytes(),
                 ))
