@@ -583,12 +583,12 @@ pub fn parse_admonish(admonish: &str, reg: &handlebars::Handlebars) -> Result<Op
     }
 
     let template = reg.render_template(
-        &std::fs::read_to_string(&format!(
+        &std::fs::read_to_string(format!(
             "{}/templates/admonish.html.hbs",
             CONFIG_PATH.display(),
         ))
             .with_context(|| {
-                format!("Couldn't read file <CONFIG PATH>/templates/admonish.html.hbs", )
+                "Couldn't read file <CONFIG PATH>/templates/admonish.html.hbs".to_string()
             })?,
         &json!({
             "title": title,
