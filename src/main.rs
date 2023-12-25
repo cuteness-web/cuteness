@@ -103,7 +103,9 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
     handlebars_helper!(is_pure: |src: String| {
         lazy_static!{
             static ref RE: regex::Regex = regex::Regex::new("([<>])").unwrap();
-        }!RE.is_match(&src)
+        };
+        
+        !RE.is_match(&src)
     });
     reg.register_helper("is_pure", Box::new(is_pure));
 
