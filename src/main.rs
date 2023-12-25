@@ -134,7 +134,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
     f.read_to_string(&mut content)
         .context("Couldn't read configuration `cuteconfig.toml`")?;
 
-    let config: Config = toml::from_str::<Config>(&content).context("Couldn't parse configuration")?;
+    let config: Config = toml::from_str(&content).context("Couldn't parse configuration")?;
 
     // * Create output directory ======================
 
