@@ -37,13 +37,11 @@ pub enum SCommand {
     Uninstall,
 }
 
-
 #[derive(Serialize)]
 pub struct Page {
     pub config: PageConfig,
     pub path: String,
 }
-
 
 #[derive(Serialize, Deserialize)]
 pub struct Map {

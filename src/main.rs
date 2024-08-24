@@ -1,7 +1,7 @@
 #![warn(clippy::all)]
 #![feature(let_chains)]
 
-use std::fs::{self, File, read_dir, read_to_string};
+use std::fs::{self, read_dir, read_to_string, File};
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -9,7 +9,7 @@ use anyhow::{bail, Context, Result};
 use clap::Parser as Argv;
 use handlebars::{handlebars_helper, no_escape};
 use lazy_static::lazy_static;
-use pulldown_cmark::{CodeBlockKind, Event, html, Options, Parser, Tag};
+use pulldown_cmark::{html, CodeBlockKind, Event, Options, Parser, Tag};
 use serde_json::json;
 use walkdir::WalkDir;
 use yaml_front_matter::{Document, YamlFrontMatter};
@@ -17,11 +17,9 @@ use yaml_front_matter::{Document, YamlFrontMatter};
 use cli::*;
 use config::{Config, PageConfig, SummaryConfig};
 use cuteness::*;
-#[cfg(feature = "tera")]
-use tera;
 
-mod config;
 mod cli;
+mod config;
 
 fn main() -> Result<()> {
     let args = Args::parse();
@@ -59,7 +57,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
         "page_template",
         CONFIG_PATH.join("templates").join("page.html.hbs"),
     )
-        .context("Couldn't register page.html.hbs")?;
+    .context("Couldn't register page.html.hbs")?;
     reg.register_template_file(
         "rocket_routing_template",
         CONFIG_PATH
@@ -68,7 +66,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
             .join("src")
             .join("main.rs.hbs"),
     )
-        .context("Couldn't register `templates/routing/src/main.rs.hbs`")?;
+    .context("Couldn't register `templates/routing/src/main.rs.hbs`")?;
 
     reg.register_template_file(
         "rocket_toml",
@@ -77,7 +75,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
             .join("routing")
             .join("Rocket.toml.hbs"),
     )
-        .context("Couldn't register Rocket.toml.hbs")?;
+    .context("Couldn't register Rocket.toml.hbs")?;
 
     handlebars_helper!(lower: |method: String| method.to_lowercase());
     reg.register_helper("lower", Box::new(lower));
@@ -104,7 +102,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
         lazy_static!{
             static ref RE: regex::Regex = regex::Regex::new("([<>])").unwrap();
         };
-        
+
         !RE.is_match(&src)
     });
     reg.register_helper("is_pure", Box::new(is_pure));
@@ -178,15 +176,15 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
                     .join("routing")
                     .join("Cargo.toml"),
             )
-                .unwrap_or_else(|e| {
-                    panic!(
-                        "Couldn't open file `{}`/templates/routing/Cargo.toml: {e}",
-                        CONFIG_PATH.display()
-                    )
-                })
-                .as_bytes(),
+            .unwrap_or_else(|e| {
+                panic!(
+                    "Couldn't open file `{}`/templates/routing/Cargo.toml: {e}",
+                    CONFIG_PATH.display()
+                )
+            })
+            .as_bytes(),
         )
-            .context("Couldn't write to routing file")?;
+        .context("Couldn't write to routing file")?;
     }
 
     let mut f = File::create(cargo_project.join("src").join("main.rs")).with_context(|| {
@@ -207,7 +205,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
     let summary: SummaryConfig = toml::from_str(
         &read_to_string("SUMMARY.toml").context("Couldn't get file `SUMMARY.toml`")?,
     )
-        .context("Couldn't parse summary in `SUMMARY.toml`")?;
+    .context("Couldn't parse summary in `SUMMARY.toml`")?;
 
     // ===========================================
 
@@ -238,8 +236,8 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
             continue;
         };
 
-        let content = read_to_string(path.path())
-            .context("Can't get path of file in the input directory")?;
+        let content =
+            read_to_string(path.path()).context("Can't get path of file in the input directory")?;
 
         let parsed_markdown: Document<PageConfig> = YamlFrontMatter::parse::<PageConfig>(&content)
             .expect("Couldn't parse frontmatter metadata");
@@ -285,13 +283,13 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
             outdir.display(),
             &filename_str[..filename_str.len() - 3]
         ))
-            .with_context(|| {
-                format!(
-                    "Couldn't create / open file `{}/static/{}.html`",
-                    outdir.display(),
-                    &filename_str[..filename_str.len() - 3]
-                )
-            })?;
+        .with_context(|| {
+            format!(
+                "Couldn't create / open file `{}/static/{}.html`",
+                outdir.display(),
+                &filename_str[..filename_str.len() - 3]
+            )
+        })?;
 
         // =======================================
 
@@ -318,13 +316,13 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
                     "misc": &config.misc
                 }),
             )
-                .with_context(|| {
-                    format!(
-                        "Couldn't render template for page `{}`",
-                        path.file_name().to_string_lossy()
-                    )
-                })?
-                .as_bytes(),
+            .with_context(|| {
+                format!(
+                    "Couldn't render template for page `{}`",
+                    path.file_name().to_string_lossy()
+                )
+            })?
+            .as_bytes(),
             format!(
                 "{}/static/{}.html",
                 outdir.display(),
@@ -384,8 +382,8 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
                 "config_path": CONFIG_PATH.to_string_lossy()
             }),
         )
-            .context("Couldn't render Rocket.toml template (id: `rocket_toml`)")?
-            .as_bytes(),
+        .context("Couldn't render Rocket.toml template (id: `rocket_toml`)")?
+        .as_bytes(),
         cargo_project.join("Rocket.toml"),
     )?;
 
@@ -395,7 +393,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
         CONFIG_PATH.join("templates").join("404.html"),
         outdir.join("static").join("404.html"),
     )
-        .context("Couldn't copy 404 page (templates/404.html)")?;
+    .context("Couldn't copy 404 page (templates/404.html)")?;
 
     // ===========================================
 
@@ -405,7 +403,7 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
         compile_styles(
             &format!("{}/static/styles", &outdir.display()),
             #[cfg(feature = "sass")]
-                &sassbin,
+            &sassbin,
         )?;
     }
 
@@ -437,14 +435,14 @@ fn build(port: u16, outdir: &Path, sassbin: String) -> Result<()> {
                 file.file_name().to_string_lossy()
             ),
         )
-            .with_context(|| {
-                format!(
-                    "Couldn't copy file `{}` to `{}/static/styles/{}`",
-                    file.path().display(),
-                    outdir.display(),
-                    file.file_name().to_string_lossy()
-                )
-            })?;
+        .with_context(|| {
+            format!(
+                "Couldn't copy file `{}` to `{}/static/styles/{}`",
+                file.path().display(),
+                outdir.display(),
+                file.file_name().to_string_lossy()
+            )
+        })?;
     }
 
     // ===========================================
@@ -459,19 +457,19 @@ trait WriteIfDifferent {
 }
 
 impl<W> WriteIfDifferent for W
-    where
-        W: Write,
+where
+    W: Write,
 {
     fn write_if_different<P: AsRef<Path>>(&mut self, buf: &[u8], path: P) -> Result<()> {
         // Check hashes
 
         if !(path.as_ref().exists()
             && blake3::hash(buf)
-            == blake3::hash(
-            read_to_string(path)
-                .context("Couldn't read path")?
-                .as_bytes(),
-        ))
+                == blake3::hash(
+                    read_to_string(path)
+                        .context("Couldn't read path")?
+                        .as_bytes(),
+                ))
         {
             self.write_all(buf).context("Couldn't write to file")?;
         }

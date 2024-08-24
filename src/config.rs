@@ -1,4 +1,4 @@
-use hashbrown::HashMap;
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use toml::Value;
 
@@ -8,7 +8,7 @@ use crate::cli::Map;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
-    pub config: HashMap<String, Value>,
+    pub config: FxHashMap<String, Value>,
     pub misc: MiscConfig,
 }
 
@@ -24,7 +24,7 @@ pub struct MiscConfig {
 #[derive(Serialize, Deserialize)]
 pub struct PageConfig {
     pub title: String,
-    pub pageconf: Option<HashMap<String, Value>>,
+    pub pageconf: Option<FxHashMap<String, Value>>,
     pub additional_css: Option<Vec<String>>,
     #[serde(default)]
     pub method: Method,

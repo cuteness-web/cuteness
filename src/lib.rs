@@ -1,5 +1,5 @@
 //! <span align=center>
-//!  
+//!
 //! ![Cuteness logo](https://raw.githubusercontent.com/blyxyas/cuteness/main/assets/logo.svg)
 //!
 //! [![crates.io](https://img.shields.io/crates/v/cuteness.svg)](https://crates.io/crates/cuteness)
@@ -432,16 +432,16 @@ pub fn setup() {
             .join("sparse-checkout"),
         "templates/*",
     )
-        .unwrap_or_else(|e| {
-            panic!(
-                "Couldn't write to {}: {e}",
-                CONFIG_PATH
-                    .join(".git")
-                    .join("info")
-                    .join("sparse-checkout")
-                    .display()
-            )
-        });
+    .unwrap_or_else(|e| {
+        panic!(
+            "Couldn't write to {}: {e}",
+            CONFIG_PATH
+                .join(".git")
+                .join("info")
+                .join("sparse-checkout")
+                .display()
+        )
+    });
 
     Command::new("echo")
         .current_dir(CONFIG_PATH.as_path())
@@ -491,7 +491,7 @@ pub fn init() {
         "cuteconfig.toml",
         include_bytes!("../defaults/cuteconfig.toml"),
     )
-        .unwrap_or_else(|e| panic!("Couldn't create `cuteconfig.toml`: {e}"));
+    .unwrap_or_else(|e| panic!("Couldn't create `cuteconfig.toml`: {e}"));
 
     std::fs::write("SUMMARY.toml", include_bytes!("../defaults/SUMMARY.toml"))
         .unwrap_or_else(|e| panic!("Couldn't create `SUMMARY.md`: {e}"));
@@ -500,7 +500,7 @@ pub fn init() {
         "src/introduction.md",
         include_bytes!("../defaults/introduction.md"),
     )
-        .unwrap_or_else(|e| panic!("Couldn't create `src/introduction.md`: {e}"));
+    .unwrap_or_else(|e| panic!("Couldn't create `src/introduction.md`: {e}"));
 }
 
 /// As the feature "sass" is enabled, we're going to let Sass take care of the job.
@@ -535,13 +535,13 @@ pub fn compile_styles(indir: &str, outdir: &str) {
             &outdir,
             &path.file_name().to_string_lossy()
         ))
-            .with_context(|| {
-                format!(
-                    "Couldn't open file `{}/{}`: {e}",
-                    &outdir,
-                    &path.file_name().to_string_lossy()
-                )
-            })?;
+        .with_context(|| {
+            format!(
+                "Couldn't open file `{}/{}`: {e}",
+                &outdir,
+                &path.file_name().to_string_lossy()
+            )
+        })?;
 
         if path.file_name().to_string_lossy().ends_with(".css") {
             f.write_if_different(
@@ -567,29 +567,26 @@ pub fn parse_admonish(admonish: &str, reg: &handlebars::Handlebars) -> Result<Op
         return Ok(None);
     };
 
-    let kind;
-    let title;
-
-    if split.len() == 1 {
-        kind = "note";
+    let kind = if split.len() == 1 {
+        "note"
     } else {
-        kind = parse_admonishkind(split[1]);
-    }
+        parse_admonishkind(split[1])
+    };
 
-    if split.len() < 3 {
-        title = String::from("Note")
+    let title = if split.len() < 3 {
+        String::from("Note")
     } else {
-        title = split[2..].join(" ");
-    }
+        split[2..].join(" ")
+    };
 
     let template = reg.render_template(
         &std::fs::read_to_string(format!(
             "{}/templates/admonish.html.hbs",
             CONFIG_PATH.display(),
         ))
-            .with_context(|| {
-                "Couldn't read file <CONFIG PATH>/templates/admonish.html.hbs".to_string()
-            })?,
+        .with_context(|| {
+            "Couldn't read file <CONFIG PATH>/templates/admonish.html.hbs".to_string()
+        })?,
         &json!({
             "title": title,
             "kind": kind
